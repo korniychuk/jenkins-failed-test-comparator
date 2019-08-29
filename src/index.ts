@@ -13,7 +13,7 @@ $config.onInit();
 const $jenkins = new JenkinsService();
 const $dom = new DomService();
 const $db = new DbService($config);
-const $modals = new ModalsService($dom);
+const $modals = new ModalsService($dom, $config);
 const $app = new AppService($modals, $db, $jenkins, $config);
 
 $app.onInit();

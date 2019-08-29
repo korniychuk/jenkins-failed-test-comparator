@@ -1,19 +1,22 @@
-import { DomService } from './dom.service';
 import {
   MainModalComponent,
   MainModalParams,
   ModalActionButtonDef,
 } from '../components/main-modal.component';
 
+import { DomService } from './dom.service';
+import { ConfigService } from './config.service';
+
 export class ModalsService {
   public isMainGridOpened = false;
 
   public constructor(
     private $dom: DomService,
+    private readonly $config: ConfigService,
   ) {}
 
   public openMainGrid(): void {
-    const comp = new MainModalComponent(this.$dom);
+    const comp = new MainModalComponent(this.$dom, this.$config);
 
     const actions: ModalActionButtonDef[] = [
       {

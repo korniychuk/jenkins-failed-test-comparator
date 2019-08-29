@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "build": "rimraf dist && webpack",
-    "serve": "http-server dist",
+    "serve": "http-server dist -p 8090",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Anton Korniychuk <dev@korniychuk.pro>",
