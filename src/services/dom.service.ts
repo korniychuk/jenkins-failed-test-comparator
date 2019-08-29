@@ -1,6 +1,6 @@
-import { CompiledTemplate, OnDestroy, Vars } from '../models';
+import { TemplateRef, OnDestroy, Vars } from '../models';
 
-export class DomService implements OnDestroy{
+export class DomService implements OnDestroy {
 
   private destroyCbs = new Set<() => void>();
 
@@ -11,7 +11,7 @@ export class DomService implements OnDestroy{
     });
   }
 
-  public compile<T>(html: string): CompiledTemplate {
+  public compile(html: string): TemplateRef<any, any> {
     const wrapper$ = document.createElement('div');
     wrapper$.innerHTML = html;
     const root$ = wrapper$.children[0] as HTMLElement | null;
@@ -19,9 +19,9 @@ export class DomService implements OnDestroy{
       throw new Error(`Can not compile HTML: ` + html.slice(100));
     }
 
-    const links = (new Array(...wrapper$.querySelectorAll('[data-select]')) as HTMLElement[])
+    const links= (new Array(...wrapper$.querySelectorAll('[data-select]')) as HTMLElement[])
       .reduce(
-        (all: CompiledTemplate['links'], element$: HTMLElement) => {
+        (all: TemplateRef['links'], element$: HTMLElement) => {
           Object.assign(all);
           const name: string | null = element$.getAttribute('data-select');
           if (!name) {
@@ -40,7 +40,7 @@ export class DomService implements OnDestroy{
 
     const linksAll = (new Array(...wrapper$.querySelectorAll('[data-select-all]')) as HTMLElement[])
       .reduce(
-        (all: CompiledTemplate['linksAll'], element$: HTMLElement) => {
+        (all: TemplateRef['linksAll'], element$: HTMLElement) => {
           Object.assign(all);
           const name: string | null = element$.getAttribute('data-select-all');
           if (!name) {
@@ -95,6 +95,20 @@ export class DomService implements OnDestroy{
 
   public sanitizeHtml(raw: string): string {
     return String(raw).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+
+  public addEventListener<K extends keyof DocumentEventMap>(element$: Document, type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): () => void;
+  public addEventListener<K extends keyof ElementEventMap>(element$: Element, type: K, listener: (this: Element, ev: ElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions, ): () => void;
+  public addEventListener<K extends keyof GlobalEventHandlersEventMap>(element$: HTMLElement, type: K, listener: ( this: GlobalEventHandlers, ev: GlobalEventHandlersEventMap[K], ) => any, options?: boolean | AddEventListenerOptions, ): () => void;
+  public addEventListener(
+    element$: Element | Document,
+    type: string,
+    listener: (...args: any[]) => any,
+    options?: object,
+  ): () => void {
+    element$.addEventListener(type, listener, options);
+    return () => element$.removeEventListener(type, listener);
   }
 
   /**

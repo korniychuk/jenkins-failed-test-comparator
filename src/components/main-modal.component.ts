@@ -1,48 +1,47 @@
-import { CompiledTemplate, Component, OnDestroy, OnInit, Vars } from '../models';
+import { TemplateRef, Component, Vars } from '../models';
 import { prefix } from '../config';
 import { DomService } from '../services/dom.service';
+import { later } from '../utils';
 
 export type ModalSizes = 'sm' | 'md' | 'lg';
 
-type LinkKeys =
-  | 'backdrop'
-  | 'modal'
-  | 'close'
-  | 'content'
-  | 'actions'
-  ;
-type LinkAllKeys = 'action';
+interface MainModalLinks {
+  modal: HTMLDivElement;
+  close: HTMLAnchorElement;
+  content: HTMLDivElement;
+  actions: HTMLDivElement;
+}
+interface MainModalLinksAll {
+  action: HTMLButtonElement;
+}
+type MainModalTemplateRef = TemplateRef<MainModalLinks, MainModalLinksAll>;
 
-export interface ModalRef {
-
+interface ActionButtonVars extends Vars{
+  internalId: number;
+  name: string;
+  tooltip: string;
 }
 
-interface ActionButtonArgs {
+interface MainModalVars extends Vars {
+  title: string;
+  size: string;
+  actions: string;
+}
+
+export interface ActionButtonArgs {
   event: MouseEvent;
   component: MainModalComponent;
   button$: HTMLButtonElement;
   close: () => void;
 }
 
-interface ActionButtonVars {
-  internalId: number;
-  name: string;
-  tooltip: string;
-}
-
-interface MainModalVars {
-  title: string;
-  size: string;
-  actions: string;
-}
-
-interface ModalActionButtonDef {
+export interface ModalActionButtonDef {
   cb: (ref: ActionButtonArgs) => void;
   name: string;
   tooltip?: string;
 }
 
-interface MainModalParams {
+export interface MainModalParams {
   content: HTMLElement[];
   title?: string;
   size?: ModalSizes;
@@ -56,19 +55,21 @@ interface MainModalParams {
   /**
    * When modal DOM created, but before inserted to the page
    */
-  onAfterInit?: (ref: ModalRef) => void;
+  onAfterInit?: (ref: MainModalTemplateRef) => void;
   /**
    * After internal all listeners removed, before removed from the page
    */
-  onBeforeDestroy?: (ref: ModalRef) => void;
+  onBeforeDestroy?: (ref: MainModalTemplateRef) => void;
 }
 
-export class MainModalComponent implements Component, OnInit, OnDestroy {
+export class MainModalComponent implements Component {
+
+  private static openedModalRefs = new Set<MainModalComponent>();
 
   private prefix = `${prefix}-main-modal`;
-  private transitionTimeMs = 250;
-  private bodyCssClass = `${ this.prefix }-opened`;
-  private backdropOpenedCssClass = `${this.prefix}-backdrop--opened`;
+  private transitionTimeMs = 200;
+  private openedBodyCssClass     = `${ this.prefix }-opened`;
+  private openedBackdropCssClass = `${ this.prefix }-backdrop--opened`;
 
   private params: Required<MainModalParams> = {
     content: [],
@@ -83,21 +84,28 @@ export class MainModalComponent implements Component, OnInit, OnDestroy {
   };
   private paramKeys = Object.keys(this.params) as (keyof Required<MainModalParams>)[];
 
-  private isInserted = false;
-  private compiled?: CompiledTemplate<LinkKeys, LinkAllKeys>;
+  private isShown = false;
+  private isPending = false;
+  private get isInserted(): boolean {
+    return MainModalComponent.openedModalRefs.has(this);
+  };
+  private ref?: MainModalTemplateRef;
 
-  private template = `
-      <div class="${ this.prefix }-backdrop" data-select="backdrop">
-        <div class="${ this.prefix } ${ this.prefix }--{{ size }}" data-select="modal">
-          <div class="${ this.prefix }__header">
-            <a role="button" class="${ this.prefix }__close" data-select="close">&times;</a>
-            <h3 class="${ this.prefix }__title">{{ title }}</h3>
-          </div>
-          <div class="${ this.prefix }__content" data-select="content"></div>
-          <div class="${ this.prefix }__actions" data-select="actions">{{ actions }}</div>
-        </div>
+  private lastDestroyCbs = new Set<() => void>();
+  private destroyCbs = new Set<() => void>();
+  private renderDestroyCbs = new Set<() => void>();
+
+  private backdropTpl = `<div class="${ this.prefix }-backdrop"></div>`;
+  private modalTpl = `
+    <div class="${ this.prefix } ${ this.prefix }--{{ size }}" data-select="modal">
+      <div class="${ this.prefix }__header">
+        <a role="button" class="${ this.prefix }__close" data-select="close">&times;</a>
+        <h3 class="${ this.prefix }__title">{{ title }}</h3>
       </div>
-    `;
+      <div class="${ this.prefix }__content" data-select="content"></div>
+      <div class="${ this.prefix }__actions" data-select="actions">{{ actions }}</div>
+    </div>
+  `;
 
   private actionButtonTpl = `
       <button class="${this.prefix}__action"
@@ -111,11 +119,11 @@ export class MainModalComponent implements Component, OnInit, OnDestroy {
       body > * {
         transition: filter ${this.transitionTimeMs}ms ease-in-out;
       }
-      body.${this.bodyCssClass} > * {
+      body.${this.openedBodyCssClass} > * {
         filter: blur(4px);
       }
 
-      body.${this.bodyCssClass} > .${this.prefix}-backdrop {
+      body.${this.openedBodyCssClass} > .${this.prefix}-backdrop {
         filter: none;
       }
 
@@ -133,7 +141,7 @@ export class MainModalComponent implements Component, OnInit, OnDestroy {
         transition: background-color ${this.transitionTimeMs}ms ease-in-out;
         background-color: transparent;
       }
-      .${this.backdropOpenedCssClass} {
+      .${this.openedBackdropCssClass} {
         filter: none;
         background-color: rgba(0, 0, 0, 0.1);
       }
@@ -146,7 +154,7 @@ export class MainModalComponent implements Component, OnInit, OnDestroy {
         opacity: 0;
         transition: all ${this.transitionTimeMs}ms ease-in-out;
       }
-      .${this.backdropOpenedCssClass} .${this.prefix} {
+      .${this.openedBackdropCssClass} .${this.prefix} {
         margin-top: 0;
         opacity: 1;
       }
@@ -216,67 +224,153 @@ export class MainModalComponent implements Component, OnInit, OnDestroy {
       }
     `;
 
-  private mainRenderer = this.$dom.vv<MainModalVars>(this.template);
+  private backdropRenderer = this.$dom.vv<{}>(this.backdropTpl);
   private actionButtonRenderer = this.$dom.vv<ActionButtonVars>(this.actionButtonTpl);
+  private modalRenderer = this.$dom.vv<MainModalVars>(this.modalTpl);
 
   public constructor(
     private readonly $dom: DomService,
   ) {}
 
-  public onInit(): void {
-
-  }
-
-  public insertTo(target$: HTMLElement): void {
+  public insertToBody(params: Partial<MainModalParams>): MainModalTemplateRef {
     if (this.isInserted) {
-      throw new Error(`An attempt to insert the same component instance twice`);
+      throw new Error(`An attempt to insert the same MainModalComponent instance twice`);
     }
+    MainModalComponent.openedModalRefs.add(this);
+
+    // Refreshing params & rerender
+    this.refreshParams(params);
+    this.render(true);
+
+    // Inserting root element to the <body>
+    document.body.appendChild(this.ref!.root$);
+
+    // Inserting styles
+    if (MainModalComponent.openedModalRefs.size === 1) {
+      this.lastDestroyCbs.add(this.$dom.insertGlobalStyles(this.styles));
+      this.bindEscToClose();
+    }
+    if (this.params.styles) {
+      this.destroyCbs.add(this.$dom.insertGlobalStyles(this.params.styles));
+    }
+
+    return this.ref!;
   }
 
-  public remove(): void {
+  public async remove(): Promise<void> {
     if (!this.isInserted) {
-      throw new Error(`An attempt to remove not inserted component`);
+      throw new Error(`An attempt to remove not inserted MainModalComponent`);
     }
+
+    // @todo: check condition
+    if (!await this.close()) return;
+
+    MainModalComponent.openedModalRefs.delete(this);
+
+    // Removing global styles
+    if (!MainModalComponent.openedModalRefs.size) {
+      this.clearDestroyCbs(this.lastDestroyCbs);
+    }
+
+    this.clearDestroyCbs(this.destroyCbs);
+
+    this.$dom.remove(this.ref!.root$);
+    this.ref = undefined;
   }
 
   public refresh(params: Partial<MainModalParams>): void {
-    this.paramKeys
-        .filter(key => this.params[key] !== undefined)
-        // @ts-ignore
-        .forEach(key => this.params[key] = params[key]);
+    this.refreshParams(params);
 
-    this.render();
+    if (this.isInserted) this.render();
   }
 
-  private render(): void {
+  public open(): Promise<boolean> {
+    return this.toggle(true);
+  }
+
+  public close(): Promise<boolean> {
+    return this.toggle(false);
+  }
+
+  /**
+   * @returns false in case toggling is in pending. Otherwise true.
+   */
+  private async toggle(show: boolean): Promise<boolean> {
+    if (this.isPending || !this.isInserted) return Promise.resolve(false);
+    if (this.isShown === show) return Promise.resolve(true);
+    this.isPending = true;
+    this.isShown = show;
+
+    const isOne = MainModalComponent.openedModalRefs.size === 1;
+
+    if (isOne && show) {
+      document.body.classList.add(this.openedBodyCssClass);
+      await later(this.transitionTimeMs);
+    }
+
+    const backdrop$ = this.ref!.root$;
+    show
+      ? backdrop$.classList.add(this.openedBackdropCssClass)
+      : backdrop$.classList.remove(this.openedBackdropCssClass);
+
+    if (isOne && !show) {
+      await later(this.transitionTimeMs);
+      document.body.classList.remove(this.openedBodyCssClass);
+    }
+
+    await later(this.transitionTimeMs);
+
+    this.isPending = false;
+    return true;
+  }
+
+  private render(createRoot = false): void {
+    this.clearDestroyCbs(this.renderDestroyCbs, cb => this.destroyCbs.delete(cb));
+
+    if (createRoot) {
+      const backdropHtml = this.backdropRenderer({});
+      this.ref = this.$dom.compile(backdropHtml);
+    } else if (!this.ref) {
+      throw new Error(`.render() No .ref`);
+    } else {
+      this.$dom.remove(this.ref.links.modal);
+      this.ref.links = {} as any;
+      this.ref.linksAll = {} as any;
+    }
+
     const actionButtonsHtml = this.params.actions
       .map(({ name, tooltip }, i) => this.actionButtonRenderer({
         name,
-        tooltip: tooltip !== undefined ? tooltip : '',
+        tooltip: tooltip !== undefined ? this.$dom.sanitizeAttrValue(tooltip) : '',
         internalId: i,
       }))
       .join('');
 
-    const html = this.mainRenderer({
+    const modalHtml = this.modalRenderer({
       actions: actionButtonsHtml,
       size: this.params.size,
       title: this.params.title,
     });
 
-    this.compiled = this.$dom.compile(html);
-    this.bindActionsCallbacks();
+    const modalRef = this.$dom.compile(modalHtml);
+    this.ref.root$.appendChild(modalRef.root$);
+    this.ref.links = { ...this.ref.links, ...modalRef.links };
+    this.ref.linksAll = { ...this.ref.linksAll, ...modalRef.linksAll };
 
+    this.bindEvents(this.ref);
+
+    const content$ = this.ref.links.content;
+    this.params.content.forEach(el$ => content$.appendChild(el$));
   }
 
-  private bindActionsCallbacks(): void {
+  private bindEvents(ref: MainModalTemplateRef): void {
     const baseArgs = {
       component: this,
-      close: () => this.close(),
+      close: () => this.remove(),
     };
-    const actions = this.compiled!.linksAll.action as HTMLButtonElement[];
+    const actionButtons: HTMLButtonElement[] = ref.linksAll.action;
 
-    // @todo: assign to somewhere
-    const destroyCbs = actions.map(button$ => {
+    actionButtons.forEach(button$ => {
       const idx = button$.getAttribute('data-internal-id');
       if (idx === null) {
         throw new Error(`Action doesn't have data-internal-id attribute`);
@@ -287,21 +381,61 @@ export class MainModalComponent implements Component, OnInit, OnDestroy {
       }
 
       const cb = (event: MouseEvent) => def.cb({ ...baseArgs, event, button$ });
-      button$.addEventListener('click', cb);
-      return () => button$.removeEventListener('click', cb);
+      this.addRenderDestroyCbs(this.$dom.addEventListener(button$, 'click', cb));
+    });
+
+    this.addRenderDestroyCbs(
+      this.$dom.addEventListener(
+        ref.links.close,
+        'click',
+        () => this.remove(),
+      ),
+    );
+  }
+
+  private bindEscToClose(): void {
+    const destroyCb = this.$dom.addEventListener(
+      document,
+      'keydown',
+      (e: KeyboardEvent) => {
+        if (e.code !== 'Escape') return;
+        const last = this.getLastInsertedMainModal();
+        if (!last) {
+          throw new Error(`Don't have last inserted MainModalComponent, but Esc event not removed`);
+        }
+        last.remove();
+      },
+    );
+
+    this.lastDestroyCbs.add(destroyCb);
+  }
+
+  private refreshParams(params: Partial<MainModalParams>): void {
+    this.paramKeys
+        .filter(key => this.params[key] !== undefined)
+        // @ts-ignore
+        .forEach(key => this.params[key] = params[key]);
+  }
+
+  private clearDestroyCbs(set: Set<() => void>, afterDeleteCb?: (deletedCb: () => void) => void): void {
+    set.forEach(cb => {
+      cb();
+      set.delete(cb);
+      afterDeleteCb && afterDeleteCb(cb);
     });
   }
 
-  private close(): void {
-      /*
-       * @todo: Закончил на том, что нужно:
-       * 1. Придумать как передавать интерфейсы в .vv
-       * 2. Придумать лучшие имена для Link...
-       * 3. Рализовать close
-       * 4. Реализовать вставку стилей
-       * 5. insertTo возможно убрать и вместо него сделать вставку в body. Хотя лучше какой-то ComponentFactory сделать.
-       */
+  private addRenderDestroyCbs(...cbs: (() => void)[]): void {
+    cbs.forEach(cb => {
+      this.renderDestroyCbs.add(cb);
+      this.destroyCbs.add(cb);
+    })
+  }
 
+  private getLastInsertedMainModal(): MainModalComponent | undefined {
+    let value: MainModalComponent | undefined;
+    for (value of MainModalComponent.openedModalRefs);
+    return value;
   }
 
 }

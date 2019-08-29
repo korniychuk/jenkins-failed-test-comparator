@@ -1,1 +1,1 @@
-export type Required<T> = { [P in keyof T]-?: T[P] };
+export const later = <T>(delay: number, value?: T) => new Promise<T>(resolve => setTimeout(resolve, delay, value));

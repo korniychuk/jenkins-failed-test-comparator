@@ -1,4 +1,4 @@
-import { Build, OnInit } from './models';
+import { Build, OnInit } from '../models';
 
 interface DbData {
   version: number;

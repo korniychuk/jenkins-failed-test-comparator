@@ -1,16 +1,22 @@
 {
-  "name": "jen-failed-test-comparator",
+  "name": "jenkins-failed-test-comparator",
   "version": "0.0.0",
   "private": true,
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "rimraf dist && webpack",
+    "serve": "http-server dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Anton Korniychuk <dev@korniychuk.pro>",
   "license": "MIT",
   "devDependencies": {
-    "typescript": "~3.5.3"
+    "typescript": "~3.5.3",
+    "webpack": "~4.39.3",
+    "webpack-cli": "~3.3.7",
+    "ts-loader": "~6.0.4",
+    "rimraf": "~3.0.0",
+    "http-server": "~0.11.1"
   }
 }

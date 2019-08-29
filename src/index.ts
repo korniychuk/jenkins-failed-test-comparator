@@ -1,5 +1,9 @@
-function foo(a: number) {
-  console.log(a, window);
-}
+import { DomService } from './services/dom.service';
+import { ModalsService } from './services/modals.service';
+import { AppService } from './services/app.service';
 
-foo(2);
+const $dom = new DomService();
+const $modals = new ModalsService($dom);
+const $app = new AppService($modals);
+
+$app.onInit();
