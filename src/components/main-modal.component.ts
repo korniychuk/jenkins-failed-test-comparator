@@ -357,6 +357,7 @@ export class MainModalComponent implements Component {
 
     const content$ = this.ref.links.content;
     this.params.content.forEach(el$ => content$.appendChild(el$));
+    this.addRenderDestroyCbs(() => this.$dom.remove(Array.from(content$.children)));
 
     return this.ref;
   }

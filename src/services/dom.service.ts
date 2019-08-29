@@ -66,12 +66,27 @@ export class DomService implements OnDestroy {
     };
   } // end compile()
 
-  public remove<T extends Node>(node: T): T {
-    const parent = node.parentElement;
-    if (!parent) return node;
+  public remove<T extends Node>(node: T): T;
+  public remove<T extends Node>(nodes: T[]): T[];
+  public remove<T extends Node>(arg: T | T[]): T | T[] {
+    if (arg instanceof Array) {
+      return arg.map(node => {
+        const parent = node.parentElement;
+        if (!parent) return node;
 
-    return parent.removeChild(node);
+        return parent.removeChild(node);
+      });
+    }
+
+    const parent = arg.parentElement;
+    if (!parent) return arg;
+
+    return parent.removeChild(arg);
   }
+
+  // public removeAll<T extends Node>(...nodes: T[]): T[] {
+  //   return nodes.map(node => this.remove(node));
+  // }
 
   public insertGlobalStyles(styles: string): () => void {
     const style$: HTMLStyleElement = document.createElement('style');
