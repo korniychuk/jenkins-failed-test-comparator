@@ -55,11 +55,11 @@ export interface MainModalParams {
   /**
    * When modal DOM created, but before inserted to the page
    */
-  onAfterInit?: (ref: MainModalTemplateRef) => void;
+  onAfterInsert?: (ref: MainModalTemplateRef) => void;
   /**
    * After internal all listeners removed, before removed from the page
    */
-  onBeforeDestroy?: (ref: MainModalTemplateRef) => void;
+  onBeforeRemove?: (ref: MainModalTemplateRef) => void;
 }
 
 export class MainModalComponent implements Component {
@@ -79,8 +79,8 @@ export class MainModalComponent implements Component {
     actions: [
       { name: 'OK', cb: () => {} },
     ],
-    onAfterInit: () => {},
-    onBeforeDestroy: () => {},
+    onAfterInsert: () => {},
+    onBeforeRemove: () => {},
   };
   private paramKeys = Object.keys(this.params) as (keyof Required<MainModalParams>)[];
 
@@ -240,10 +240,10 @@ export class MainModalComponent implements Component {
 
     // Refreshing params & rerender
     this.refreshParams(params);
-    this.render(true);
+    const ref = this.render(true);
 
     // Inserting root element to the <body>
-    document.body.appendChild(this.ref!.root$);
+    document.body.appendChild(ref.root$);
 
     // Inserting styles
     if (MainModalComponent.openedModalRefs.size === 1) {
@@ -254,7 +254,10 @@ export class MainModalComponent implements Component {
       this.destroyCbs.add(this.$dom.insertGlobalStyles(this.params.styles));
     }
 
-    return this.ref!;
+    this.params.onAfterInsert(ref);
+    this.toggle(true);
+
+    return ref;
   }
 
   public async remove(): Promise<void> {
@@ -263,8 +266,9 @@ export class MainModalComponent implements Component {
     }
 
     // @todo: check condition
-    if (!await this.close()) return;
+    if (!await this.toggle(false)) return;
 
+    this.params.onBeforeRemove(this.ref!);
     MainModalComponent.openedModalRefs.delete(this);
 
     // Removing global styles
@@ -282,14 +286,6 @@ export class MainModalComponent implements Component {
     this.refreshParams(params);
 
     if (this.isInserted) this.render();
-  }
-
-  public open(): Promise<boolean> {
-    return this.toggle(true);
-  }
-
-  public close(): Promise<boolean> {
-    return this.toggle(false);
   }
 
   /**
@@ -324,7 +320,7 @@ export class MainModalComponent implements Component {
     return true;
   }
 
-  private render(createRoot = false): void {
+  private render(createRoot = false): MainModalTemplateRef {
     this.clearDestroyCbs(this.renderDestroyCbs, cb => this.destroyCbs.delete(cb));
 
     if (createRoot) {
@@ -361,6 +357,8 @@ export class MainModalComponent implements Component {
 
     const content$ = this.ref.links.content;
     this.params.content.forEach(el$ => content$.appendChild(el$));
+
+    return this.ref;
   }
 
   private bindEvents(ref: MainModalTemplateRef): void {

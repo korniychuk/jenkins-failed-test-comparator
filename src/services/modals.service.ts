@@ -41,12 +41,9 @@ export class ModalsService {
       actions,
       size: 'lg',
       title: 'Failed Tests Comparator',
-      // onAfterInit: (ref) => {
-      //   this._mainModalRef = ref;
-      // },
-      // onBeforeDestroy: () => this._mainModalRef = undefined,
+      onAfterInsert: () => this.isMainGridOpened = true,
+      onBeforeRemove: () => this.isMainGridOpened = false,
     };
     comp.insertToBody(params);
-    comp.open();
   }
 }
