@@ -2,6 +2,7 @@ import { TemplateRef, Component, Vars } from '../models';
 import { DomService } from '../services/dom.service';
 import { ConfigService } from '../services/config.service';
 import { later } from '../utils';
+import { Hell } from '../hell';
 
 export type ModalSizes = 'sm' | 'md' | 'lg';
 
@@ -91,9 +92,9 @@ export class MainModalComponent implements Component {
   };
   private ref?: MainModalTemplateRef;
 
-  private lastDestroyCbs = new Set<() => void>();
-  private destroyCbs = new Set<() => void>();
-  private renderDestroyCbs = new Set<() => void>();
+  private lastDestroyCbs = new Hell();
+  private destroyCbs = new Hell();
+  private renderDestroyCbs = new Hell(this.destroyCbs);
 
   private backdropTpl = `<div class="${ this.prefix }-backdrop"></div>`;
   private modalTpl = `
@@ -274,10 +275,10 @@ export class MainModalComponent implements Component {
 
     // Removing global styles
     if (!MainModalComponent.openedModalRefs.size) {
-      this.clearDestroyCbs(this.lastDestroyCbs);
+      this.lastDestroyCbs.clear();
     }
 
-    this.clearDestroyCbs(this.destroyCbs);
+    this.destroyCbs.clear();
 
     this.$dom.remove(this.ref!.root$);
     this.ref = undefined;
@@ -322,7 +323,7 @@ export class MainModalComponent implements Component {
   }
 
   private render(createRoot = false): MainModalTemplateRef {
-    this.clearDestroyCbs(this.renderDestroyCbs, cb => this.destroyCbs.delete(cb));
+    this.renderDestroyCbs.clear();
 
     if (createRoot) {
       const backdropHtml = this.backdropRenderer({});
@@ -358,7 +359,7 @@ export class MainModalComponent implements Component {
 
     const content$ = this.ref.links.content;
     this.params.content.forEach(el$ => content$.appendChild(el$));
-    this.addRenderDestroyCbs(() => this.$dom.remove(Array.from(content$.children)));
+    this.renderDestroyCbs.add(() => this.$dom.remove(Array.from(content$.children)));
 
     return this.ref;
   }
@@ -381,10 +382,10 @@ export class MainModalComponent implements Component {
       }
 
       const cb = (event: MouseEvent) => def.cb({ ...baseArgs, event, button$ });
-      this.addRenderDestroyCbs(this.$dom.addEventListener(button$, 'click', cb));
+      this.renderDestroyCbs.add(this.$dom.addEventListener(button$, 'click', cb));
     });
 
-    this.addRenderDestroyCbs(
+    this.renderDestroyCbs.add(
       this.$dom.addEventListener(
         ref.links.close,
         'click',
@@ -415,21 +416,6 @@ export class MainModalComponent implements Component {
         .filter(key => this.params[key] !== undefined)
         // @ts-ignore
         .forEach(key => this.params[key] = params[key]);
-  }
-
-  private clearDestroyCbs(set: Set<() => void>, afterDeleteCb?: (deletedCb: () => void) => void): void {
-    set.forEach(cb => {
-      cb();
-      set.delete(cb);
-      afterDeleteCb && afterDeleteCb(cb);
-    });
-  }
-
-  private addRenderDestroyCbs(...cbs: (() => void)[]): void {
-    cbs.forEach(cb => {
-      this.renderDestroyCbs.add(cb);
-      this.destroyCbs.add(cb);
-    })
   }
 
   private getLastInsertedMainModal(): MainModalComponent | undefined {
