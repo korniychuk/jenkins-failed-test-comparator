@@ -1,4 +1,4 @@
-import { Build, BuildInfo, FailedTestId } from '../models';
+import { Build, BuildInfo, FailedTest } from '../models';
 
 interface ESNextRegExpMatchArray extends RegExpMatchArray {
   groups: { [key: string]: string };
@@ -19,6 +19,11 @@ export class JenkinsService {
       ...this.retrieveBuildInfo(),
       failedTests: this.retrieveFailedTests(),
     };
+  }
+
+  public retrieveJobName(): string | undefined {
+    const name = location.pathname.replace(/^((?:\/job\/[\w-]+)+).*?$/, '$1');
+    return name || undefined;
   }
 
   private retrieveBuildInfo(): BuildInfo {
@@ -47,11 +52,13 @@ export class JenkinsService {
     return { id: +id, name, date, dynamic };
   }
 
-  private retrieveFailedTests(): FailedTestId[] {
+  private retrieveFailedTests(): FailedTest[] {
     const q = document.querySelectorAll('a[href="testReport/"] + ul a[href^="testReport/junit/"]');
 
-    return (new Array(...q) as HTMLAnchorElement[]).map(v =>
-      (v.textContent || '').replace(/^.+?([A-Z]{2,10}_\d+).+?$/, '$1')
-    );
+    return (new Array(...q) as HTMLAnchorElement[])
+      .map(v =>
+        (v.textContent || '').replace(/^.+?([A-Z]{2,10}_\d+).+?$/, '$1'),
+      )
+      .map(id => ({ id }));
   }
 }

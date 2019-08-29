@@ -1,6 +1,6 @@
 import { TemplateRef, Component, Vars } from '../models';
-import { prefix } from '../config';
 import { DomService } from '../services/dom.service';
+import { ConfigService } from '../services/config.service';
 import { later } from '../utils';
 
 export type ModalSizes = 'sm' | 'md' | 'lg';
@@ -66,7 +66,7 @@ export class MainModalComponent implements Component {
 
   private static openedModalRefs = new Set<MainModalComponent>();
 
-  private prefix = `${prefix}-main-modal`;
+  private prefix = `${this.$config.prefix}-main-modal`;
   private transitionTimeMs = 200;
   private openedBodyCssClass     = `${ this.prefix }-opened`;
   private openedBackdropCssClass = `${ this.prefix }-backdrop--opened`;
@@ -230,6 +230,7 @@ export class MainModalComponent implements Component {
 
   public constructor(
     private readonly $dom: DomService,
+    private readonly $config: ConfigService,
   ) {}
 
   public insertToBody(params: Partial<MainModalParams>): MainModalTemplateRef {

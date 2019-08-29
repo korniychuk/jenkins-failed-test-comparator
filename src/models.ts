@@ -1,7 +1,7 @@
-/**
- * @example XXX_123
- */
-export type FailedTestId = string;
+export interface FailedTest {
+  /** @example XXX_123 */
+  id: string;
+}
 
 export type Vars = { [key: string]: string | number | boolean | undefined };
 
@@ -22,7 +22,29 @@ export interface BuildInfo {
 }
 
 export interface Build extends BuildInfo {
-  failedTests: FailedTestId[];
+  failedTests: FailedTest[];
+}
+
+export interface HotKeyConfig {
+  key: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L' | 'M' | 'N' | 'O' | 'P' | 'Q' | 'R' | 'S' | 'T' | 'U' | 'V' | 'W' | 'X' | 'Y' | 'Z';
+  ctrl: boolean;
+  alt: boolean;
+  shift: boolean;
+}
+
+export interface CustomConfig {
+  dbName?: string;
+  hotKeys?: {
+    openMainModal?: HotKeyConfig;
+  };
+}
+
+export interface Config extends CustomConfig {
+  prefix: string;
+  dbName: string;
+  hotKeys: {
+    openMainModal: HotKeyConfig;
+  };
 }
 
 export interface OnInit {
