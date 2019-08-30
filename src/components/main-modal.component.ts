@@ -238,7 +238,7 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
     private readonly $config: ConfigService,
   ) {}
 
-  public insertToBody(params: Partial<MainModalParams>): MainModalComponentRef {
+  public async insertToBody(params: Partial<MainModalParams>): Promise<MainModalComponentRef> {
     if (this.isInserted) {
       throw new Error(`An attempt to insert the same MainModalComponent instance twice`);
     }
@@ -249,9 +249,7 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
     const ref = this.render(true);
 
     // Inserting root element to the <body>
-    this.$dom.append(document.body, ref);
-
-    return ref;
+    return this.$dom.append(document.body, ref);
   }
 
   public async remove(): Promise<void> {
@@ -285,7 +283,6 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
   }
 
   public async onBeforeRemove(): Promise<void> {
-    // @todo: check condition
     if (!await this.toggle(false)) return;
 
     this.params.onBeforeRemove(this.ref!);
