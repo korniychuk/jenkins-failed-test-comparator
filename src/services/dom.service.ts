@@ -66,20 +66,41 @@ export class DomService implements OnDestroy {
     } as T;
   } // end compile()
 
-  // @todo: implement insert method
+  public append<T extends Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(parent: Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>, newChild: T): T;
+  public append<T extends Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(parent: Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>, newChild: T[]): T[];
+  public append<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(parent: Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>, newChild: T | T[]): T | T[] {
+    return newChild instanceof Array
+           ? newChild.map(one => this.appendOne(parent, one))
+           : this.appendOne(parent, newChild);
+  }
 
-  public remove<T extends Element | ComponentRef>(node: T): T;
-  public remove<T extends Element | ComponentRef>(nodes: T[]): T[];
-  public remove<T extends Element | ComponentRef>(arg: T | T[]): T | T[] {
+  private appendOne<T extends Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(
+    parent: Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>,
+    newChild: T,
+  ): T {
+    const parent$: Node = this.isTemplateRef(parent) ? parent.root$ : parent as Node;
+    const child$: Node = this.isTemplateRef(newChild) ? newChild.root$ : newChild as Node;
+    const comp: ComponentDev | undefined = this.isComponentRef(newChild) ? newChild.componentInstance : undefined;
+
+    comp && comp.onBeforeInsert && comp.onBeforeInsert();
+    parent$.appendChild(child$);
+    comp && comp.onAfterInsert && comp.onAfterInsert();
+
+    return newChild;
+  }
+
+  public remove<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(node: T): T;
+  public remove<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(nodes: T[]): T[];
+  public remove<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(arg: T | T[]): T | T[] {
     return arg instanceof Array
            ? arg.map(node => this.removeOne(node))
            : this.removeOne(arg);
   }
 
-  private removeOne<T extends Element | ComponentRef<ComponentDev>>(entity: T): T {
-    const comp: ComponentDev | undefined = this.isComponent(entity) ? entity.componentInstance : undefined;
-    const node = comp ? (entity as ComponentRef).root$ : entity as Element;
+  private removeOne<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(entity: T): T {
+    const node = this.isTemplateRef(entity) ? entity.root$ : entity as Element;
     const parent = node.parentElement || undefined;
+    const comp: ComponentDev | undefined = this.isComponentRef(entity) ? entity.componentInstance : undefined;
 
     if (parent) {
       comp && comp.onBeforeRemove && comp.onBeforeRemove();
@@ -150,13 +171,17 @@ export class DomService implements OnDestroy {
 
   public makeRenderer<
     V extends Vars = {},
-    T extends TemplateRef = TemplateRef<{}, {}>
+    T extends TemplateRef<any, any> = TemplateRef<{}, {}>
   >(tpl: string): (vars: V) => T {
     const interpolator = this.makeInterpolator(tpl);
     return (vars: Vars) => this.compile(interpolator(vars));
   }
 
-  private isComponent(entity: any): entity is ComponentRef {
+  private isTemplateRef(entity: TemplateRef | unknown): entity is TemplateRef {
+    return !!((entity as TemplateRef).root$ && (entity as TemplateRef).linksAll);
+  }
+
+  private isComponentRef(entity: ComponentRef | unknown): entity is ComponentRef {
     return !!((entity as ComponentRef).root$ && (entity as ComponentRef).componentInstance);
   }
 

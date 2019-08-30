@@ -45,7 +45,7 @@ export interface ModalActionButtonDef {
 }
 
 export interface MainModalParams {
-  content: HTMLElement[];
+  content: (HTMLElement | TemplateRef<any, any>)[];
   title?: string;
   size?: ModalSizes;
 
@@ -208,7 +208,7 @@ export class MainModalComponent implements Component {
     `;
 
   private backdropRenderer = this.$dom.makeRenderer(`<div class="${ this.prefix }-backdrop"></div>`);
-  private actionButtonRenderer = this.$dom.makeRenderer<ActionButtonVars, ActionButtonTemplateRef>(`
+  private actionButtonInterpolator = this.$dom.makeInterpolator<ActionButtonVars>(`
       <button class="${this.prefix}__action"
               title="{{ tooltip }}"
               data-select-all="action"
@@ -242,7 +242,7 @@ export class MainModalComponent implements Component {
     const ref = this.render(true);
 
     // Inserting root element to the <body>
-    document.body.appendChild(ref.root$);
+    this.$dom.append(document.body, ref);
 
     // Inserting styles
     if (MainModalComponent.openedModalRefs.size === 1) {
@@ -335,7 +335,7 @@ export class MainModalComponent implements Component {
     }
 
     const actionButtonsHtml = this.params.actions
-      .map(({ name, tooltip }, i) => this.actionButtonRenderer({
+      .map(({ name, tooltip }, i) => this.actionButtonInterpolator({
         name,
         tooltip: tooltip !== undefined ? this.$dom.sanitizeAttrValue(tooltip) : '',
         internalId: i,
@@ -348,15 +348,16 @@ export class MainModalComponent implements Component {
       title: this.params.title,
     });
 
-    this.ref.root$.appendChild(modalRef.root$);
+    this.$dom.append(this.ref, modalRef);
     this.ref.links = { ...this.ref.links, ...modalRef.links };
     this.ref.linksAll = { ...this.ref.linksAll, ...modalRef.linksAll };
 
     this.bindEvents(this.ref);
 
     const content$ = this.ref.links.content;
-    this.params.content.forEach(el$ => content$.appendChild(el$));
-    this.renderDestroyCbs.add(() => this.$dom.remove(Array.from(content$.children)));
+    const contentToInsert = this.params.content; // preserving links to the array
+    this.$dom.append(content$, contentToInsert);
+    this.renderDestroyCbs.add(() => this.$dom.remove(contentToInsert));
 
     return this.ref;
   }
