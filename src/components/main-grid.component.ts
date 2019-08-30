@@ -1,11 +1,13 @@
 import { DomService } from '../services/dom.service';
+import { ConfigService } from '../services/config.service';
 import { TemplateRef } from '../models';
+import { Hell } from '../hell';
 
 type MainGridTemplateRef = TemplateRef<any, any>;
 
 export class MainGridComponent {
 
-  private prefix = 'ftc-grid';
+  private prefix = `${this.$config.prefix}-grid`;
 
   private styles = `
         .${ this.prefix } {
@@ -21,7 +23,7 @@ export class MainGridComponent {
         .${ this.prefix } td, .${ this.prefix } th {
           border-bottom: 1px solid #aaa;
           padding: 7px 5px;
-          text-align: center; 
+          text-align: center;
         }
         .${ this.prefix } tbody tr {
           cursor: pointer;
@@ -30,7 +32,7 @@ export class MainGridComponent {
           background: #f99;
         }
         .${ this.prefix } tr.selected {
-          background: #e2525c; 
+          background: #e2525c;
         }
       `;
 
@@ -58,16 +60,22 @@ export class MainGridComponent {
 
   private ref?: MainGridTemplateRef;
 
+  private lastDestroyCbs = new Hell();
+  private destroyCbs = new Hell();
+  private renderDestroyCbs = new Hell(this.destroyCbs);
+
   public constructor(
     private readonly $dom: DomService,
+    private readonly $config: ConfigService,
   ) {}
 
+
   render(createRoot = false): MainGridTemplateRef {
-    this.clearDestroyCbs(this.renderDestroyCbs, cb => this.destroyCbs.delete(cb));
+    this.renderDestroyCbs.clear();
 
     if (createRoot) {
-      const backdropHtml = this.({});
-      this.ref = this.$dom.compile(backdropHtml);
+      const gridHtml = this.({});
+      this.ref = this.$dom.compile(gridHtml);
     } else if (!this.ref) {
       throw new Error(`.render() No .ref`);
     } else {

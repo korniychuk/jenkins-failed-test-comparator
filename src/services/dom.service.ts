@@ -66,6 +66,8 @@ export class DomService implements OnDestroy {
     };
   } // end compile()
 
+  // @todo: implement insert method
+  // @todo: implement ComponentRef
   public remove<T extends Node>(node: T): T;
   public remove<T extends Node>(nodes: T[]): T[];
   public remove<T extends Node>(arg: T | T[]): T | T[] {

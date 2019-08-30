@@ -13,6 +13,16 @@ export interface TemplateRef<
   links: { [key in keyof Links]: Links[key] };
   linksAll: { [key in keyof LinkAll]: LinkAll[key][] };
 }
+export interface ComponentRef<
+  Links extends object = { [key: string]: HTMLElement },
+  LinkAll extends object = { [key: string]: HTMLElement },
+  > {
+  componentInstance: Component;
+  root$: HTMLElement;
+  links: { [key in keyof Links]: Links[key] };
+  linksAll: { [key in keyof LinkAll]: LinkAll[key][] };
+}
+
 
 export interface BuildInfo {
   id: number;
@@ -55,8 +65,29 @@ export interface OnDestroy {
   onDestroy(): void;
 }
 
-export interface Component {
+export interface OnBeforeInsert {
+  onBeforeInsert(): void;
+}
+
+export interface OnAfterInsert {
+  onAfterInsert(): void;
+}
+
+export interface OnBeforeRemove {
+  onBeforeRemove(): void;
+}
+
+export interface OnAfterRemove {
+  onAfterRemove(): void;
+}
+
+export interface Component extends Partial<OnAfterInsert & OnBeforeInsert & OnBeforeRemove & OnAfterRemove> {
   // insertTo(target$: HTMLElement): void;
   // remove(): void;
   refresh(vars: Vars): void;
+}
+
+export interface ComponentDev
+  extends Component,
+          Partial<OnAfterInsert & OnBeforeInsert & OnBeforeRemove & OnAfterRemove> {
 }

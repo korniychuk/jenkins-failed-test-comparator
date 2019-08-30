@@ -15,6 +15,7 @@ interface MainModalLinks {
 interface MainModalLinksAll {
   action: HTMLButtonElement;
 }
+// @todo: start using ComponentRef
 type MainModalTemplateRef = TemplateRef<MainModalLinks, MainModalLinksAll>;
 
 interface ActionButtonVars extends Vars{
