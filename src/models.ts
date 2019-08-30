@@ -7,20 +7,18 @@ export type Vars = { [key: string]: string | number | boolean | undefined };
 
 export interface TemplateRef<
   Links extends object = { [key: string]: HTMLElement },
-  LinkAll extends object = { [key: string]: HTMLElement },
+  LinksAll extends object = { [key: string]: HTMLElement },
 > {
   root$: HTMLElement;
   links: { [key in keyof Links]: Links[key] };
-  linksAll: { [key in keyof LinkAll]: LinkAll[key][] };
+  linksAll: { [key in keyof LinksAll]: LinksAll[key][] };
 }
 export interface ComponentRef<
+  Comp extends Component = Component,
   Links extends object = { [key: string]: HTMLElement },
-  LinkAll extends object = { [key: string]: HTMLElement },
-  > {
-  componentInstance: Component;
-  root$: HTMLElement;
-  links: { [key in keyof Links]: Links[key] };
-  linksAll: { [key in keyof LinkAll]: LinkAll[key][] };
+  LinksAll extends object = { [key: string]: HTMLElement },
+> extends TemplateRef<Links, LinksAll> {
+  componentInstance: Comp;
 }
 
 

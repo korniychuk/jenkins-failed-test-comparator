@@ -1,4 +1,4 @@
-import { TemplateRef, Component, Vars } from '../models';
+import { TemplateRef, Component, Vars, ComponentRef } from '../models';
 import { DomService } from '../services/dom.service';
 import { ConfigService } from '../services/config.service';
 import { later } from '../utils';
@@ -6,17 +6,18 @@ import { Hell } from '../hell';
 
 export type ModalSizes = 'sm' | 'md' | 'lg';
 
-interface MainModalLinks {
+interface ModalLinks {
   modal: HTMLDivElement;
   close: HTMLAnchorElement;
   content: HTMLDivElement;
   actions: HTMLDivElement;
 }
-interface MainModalLinksAll {
+interface ActionButtonLinksAll {
   action: HTMLButtonElement;
 }
-// @todo: start using ComponentRef
-type MainModalTemplateRef = TemplateRef<MainModalLinks, MainModalLinksAll>;
+type ActionButtonTemplateRef = TemplateRef<{}, ActionButtonLinksAll>;
+type ModalTemplateRef = TemplateRef<ModalLinks, {}>;
+type MainModalComponentRef = ComponentRef<MainModalComponent, ModalLinks, ActionButtonLinksAll>;
 
 interface ActionButtonVars extends Vars{
   internalId: number;
@@ -57,11 +58,11 @@ export interface MainModalParams {
   /**
    * When modal DOM created, but before inserted to the page
    */
-  onAfterInsert?: (ref: MainModalTemplateRef) => void;
+  onAfterInsert?: (ref: MainModalComponentRef) => void;
   /**
    * After internal all listeners removed, before removed from the page
    */
-  onBeforeRemove?: (ref: MainModalTemplateRef) => void;
+  onBeforeRemove?: (ref: MainModalComponentRef) => void;
 }
 
 export class MainModalComponent implements Component {
@@ -91,31 +92,11 @@ export class MainModalComponent implements Component {
   private get isInserted(): boolean {
     return MainModalComponent.openedModalRefs.has(this);
   };
-  private ref?: MainModalTemplateRef;
+  private ref?: MainModalComponentRef;
 
   private lastDestroyCbs = new Hell();
   private destroyCbs = new Hell();
   private renderDestroyCbs = new Hell(this.destroyCbs);
-
-  private backdropTpl = `<div class="${ this.prefix }-backdrop"></div>`;
-  private modalTpl = `
-    <div class="${ this.prefix } ${ this.prefix }--{{ size }}" data-select="modal">
-      <div class="${ this.prefix }__header">
-        <a role="button" class="${ this.prefix }__close" data-select="close">&times;</a>
-        <h3 class="${ this.prefix }__title">{{ title }}</h3>
-      </div>
-      <div class="${ this.prefix }__content" data-select="content"></div>
-      <div class="${ this.prefix }__actions" data-select="actions">{{ actions }}</div>
-    </div>
-  `;
-
-  private actionButtonTpl = `
-      <button class="${this.prefix}__action"
-              title="{{ tooltip }}"
-              data-select-all="action"
-              data-internal-id="{{ internalId }}"
-      >{{ name }}</button>
-  `;
 
   private styles = `
       body > * {
@@ -226,16 +207,31 @@ export class MainModalComponent implements Component {
       }
     `;
 
-  private backdropRenderer = this.$dom.vv<{}>(this.backdropTpl);
-  private actionButtonRenderer = this.$dom.vv<ActionButtonVars>(this.actionButtonTpl);
-  private modalRenderer = this.$dom.vv<MainModalVars>(this.modalTpl);
+  private backdropRenderer = this.$dom.makeRenderer(`<div class="${ this.prefix }-backdrop"></div>`);
+  private actionButtonRenderer = this.$dom.makeRenderer<ActionButtonVars, ActionButtonTemplateRef>(`
+      <button class="${this.prefix}__action"
+              title="{{ tooltip }}"
+              data-select-all="action"
+              data-internal-id="{{ internalId }}"
+      >{{ name }}</button>
+  `);
+  private modalRenderer = this.$dom.makeRenderer<MainModalVars, ModalTemplateRef>(`
+    <div class="${ this.prefix } ${ this.prefix }--{{ size }}" data-select="modal">
+      <div class="${ this.prefix }__header">
+        <a role="button" class="${ this.prefix }__close" data-select="close">&times;</a>
+        <h3 class="${ this.prefix }__title">{{ title }}</h3>
+      </div>
+      <div class="${ this.prefix }__content" data-select="content"></div>
+      <div class="${ this.prefix }__actions" data-select="actions">{{ actions }}</div>
+    </div>
+  `);
 
   public constructor(
     private readonly $dom: DomService,
     private readonly $config: ConfigService,
   ) {}
 
-  public insertToBody(params: Partial<MainModalParams>): MainModalTemplateRef {
+  public insertToBody(params: Partial<MainModalParams>): MainModalComponentRef {
     if (this.isInserted) {
       throw new Error(`An attempt to insert the same MainModalComponent instance twice`);
     }
@@ -323,12 +319,13 @@ export class MainModalComponent implements Component {
     return true;
   }
 
-  private render(createRoot = false): MainModalTemplateRef {
+  private render(createRoot = false): MainModalComponentRef {
     this.renderDestroyCbs.clear();
 
     if (createRoot) {
-      const backdropHtml = this.backdropRenderer({});
-      this.ref = this.$dom.compile(backdropHtml);
+      // @todo: wrong typings on the next lines
+      const tplRef: TemplateRef<ModalLinks, ActionButtonLinksAll> = this.backdropRenderer({}) as any;
+      this.ref = { ...tplRef, componentInstance: this };
     } else if (!this.ref) {
       throw new Error(`.render() No .ref`);
     } else {
@@ -345,13 +342,12 @@ export class MainModalComponent implements Component {
       }))
       .join('');
 
-    const modalHtml = this.modalRenderer({
+    const modalRef = this.modalRenderer({
       actions: actionButtonsHtml,
       size: this.params.size,
       title: this.params.title,
     });
 
-    const modalRef = this.$dom.compile(modalHtml);
     this.ref.root$.appendChild(modalRef.root$);
     this.ref.links = { ...this.ref.links, ...modalRef.links };
     this.ref.linksAll = { ...this.ref.linksAll, ...modalRef.linksAll };
@@ -365,7 +361,7 @@ export class MainModalComponent implements Component {
     return this.ref;
   }
 
-  private bindEvents(ref: MainModalTemplateRef): void {
+  private bindEvents(ref: MainModalComponentRef): void {
     const baseArgs = {
       component: this,
       close: () => this.remove(),
