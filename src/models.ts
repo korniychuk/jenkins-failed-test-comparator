@@ -64,19 +64,19 @@ export interface OnDestroy {
 }
 
 export interface OnBeforeInsert {
-  onBeforeInsert(): void;
+  onBeforeInsert(): void | Promise<void>;
 }
 
 export interface OnAfterInsert {
-  onAfterInsert(): void;
+  onAfterInsert(): void | Promise<void>;
 }
 
 export interface OnBeforeRemove {
-  onBeforeRemove(): void;
+  onBeforeRemove(): void | Promise<void>;
 }
 
 export interface OnAfterRemove {
-  onAfterRemove(): void;
+  onAfterRemove(): void | Promise<void>;
 }
 
 export interface Component extends Partial<OnAfterInsert & OnBeforeInsert & OnBeforeRemove & OnAfterRemove> {

@@ -66,46 +66,46 @@ export class DomService implements OnDestroy {
     } as T;
   } // end compile()
 
-  public append<T extends Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(parent: Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>, newChild: T): T;
-  public append<T extends Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(parent: Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>, newChild: T[]): T[];
-  public append<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(parent: Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>, newChild: T | T[]): T | T[] {
+  public async append<T extends Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(parent: Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>, newChild: T): Promise<T>;
+  public async append<T extends Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(parent: Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>, newChild: T[]): Promise<T[]>;
+  public async append<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(parent: Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>, newChild: T | T[]): Promise<T | T[]> {
     return newChild instanceof Array
-           ? newChild.map(one => this.appendOne(parent, one))
-           : this.appendOne(parent, newChild);
+           ? Promise.all(newChild.map(async (one) => await this.appendOne(parent, one)))
+           : await this.appendOne(parent, newChild);
   }
 
-  private appendOne<T extends Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(
+  private async appendOne<T extends Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(
     parent: Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>,
     newChild: T,
-  ): T {
+  ): Promise<T> {
     const parent$: Node = this.isTemplateRef(parent) ? parent.root$ : parent as Node;
     const child$: Node = this.isTemplateRef(newChild) ? newChild.root$ : newChild as Node;
     const comp: ComponentDev | undefined = this.isComponentRef(newChild) ? newChild.componentInstance : undefined;
 
-    comp && comp.onBeforeInsert && comp.onBeforeInsert();
+    comp && comp.onBeforeInsert && await comp.onBeforeInsert();
     parent$.appendChild(child$);
-    comp && comp.onAfterInsert && comp.onAfterInsert();
+    comp && comp.onAfterInsert && await comp.onAfterInsert();
 
     return newChild;
   }
 
-  public remove<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(node: T): T;
-  public remove<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(nodes: T[]): T[];
-  public remove<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(arg: T | T[]): T | T[] {
+  public async remove<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(node: T): Promise<T>;
+  public async remove<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(nodes: T[]): Promise<T[]>;
+  public async remove<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(arg: T | T[]): Promise<T | T[]> {
     return arg instanceof Array
-           ? arg.map(node => this.removeOne(node))
-           : this.removeOne(arg);
+           ? Promise.all(arg.map(async (node) => await this.removeOne(node)))
+           : await this.removeOne(arg);
   }
 
-  private removeOne<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(entity: T): T {
+  private async removeOne<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(entity: T): Promise<T> {
     const node = this.isTemplateRef(entity) ? entity.root$ : entity as Element;
     const parent = node.parentElement || undefined;
     const comp: ComponentDev | undefined = this.isComponentRef(entity) ? entity.componentInstance : undefined;
 
     if (parent) {
-      comp && comp.onBeforeRemove && comp.onBeforeRemove();
+      comp && comp.onBeforeRemove && await comp.onBeforeRemove();
       parent.removeChild(node);
-      comp && comp.onAfterRemove && comp.onAfterRemove();
+      comp && comp.onAfterRemove && await comp.onAfterRemove();
     }
 
     return entity;

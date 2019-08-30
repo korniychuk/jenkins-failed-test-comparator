@@ -1,4 +1,11 @@
-import { TemplateRef, Component, Vars, ComponentRef } from '../models';
+import {
+  TemplateRef,
+  Component,
+  Vars,
+  ComponentRef,
+  OnAfterInsert,
+  OnBeforeRemove, OnAfterRemove,
+} from '../models';
 import { DomService } from '../services/dom.service';
 import { ConfigService } from '../services/config.service';
 import { later } from '../utils';
@@ -65,7 +72,7 @@ export interface MainModalParams {
   onBeforeRemove?: (ref: MainModalComponentRef) => void;
 }
 
-export class MainModalComponent implements Component {
+export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRemove {
 
   private static openedModalRefs = new Set<MainModalComponent>();
 
@@ -244,6 +251,26 @@ export class MainModalComponent implements Component {
     // Inserting root element to the <body>
     this.$dom.append(document.body, ref);
 
+    return ref;
+  }
+
+  public async remove(): Promise<void> {
+    if (!this.isInserted) {
+      throw new Error(`An attempt to remove not inserted MainModalComponent`);
+    }
+
+    await this.$dom.remove(this.ref!);
+    this.ref = undefined;
+    MainModalComponent.openedModalRefs.delete(this);
+  }
+
+  public refresh(params: Partial<MainModalParams>): void {
+    this.refreshParams(params);
+
+    if (this.isInserted) this.render();
+  }
+
+  public onAfterInsert(): void {
     // Inserting styles
     if (MainModalComponent.openedModalRefs.size === 1) {
       this.lastDestroyCbs.add(this.$dom.insertGlobalStyles(this.styles));
@@ -253,38 +280,22 @@ export class MainModalComponent implements Component {
       this.destroyCbs.add(this.$dom.insertGlobalStyles(this.params.styles));
     }
 
-    this.params.onAfterInsert(ref);
+    this.params.onAfterInsert(this.ref!);
     this.toggle(true);
-
-    return ref;
   }
 
-  public async remove(): Promise<void> {
-    if (!this.isInserted) {
-      throw new Error(`An attempt to remove not inserted MainModalComponent`);
-    }
-
+  public async onBeforeRemove(): Promise<void> {
     // @todo: check condition
     if (!await this.toggle(false)) return;
 
     this.params.onBeforeRemove(this.ref!);
-    MainModalComponent.openedModalRefs.delete(this);
 
     // Removing global styles
-    if (!MainModalComponent.openedModalRefs.size) {
+    if (MainModalComponent.openedModalRefs.size === 1) {
       this.lastDestroyCbs.clear();
     }
 
     this.destroyCbs.clear();
-
-    this.$dom.remove(this.ref!.root$);
-    this.ref = undefined;
-  }
-
-  public refresh(params: Partial<MainModalParams>): void {
-    this.refreshParams(params);
-
-    if (this.isInserted) this.render();
   }
 
   /**
