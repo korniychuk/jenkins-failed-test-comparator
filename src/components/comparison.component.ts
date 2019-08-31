@@ -25,16 +25,21 @@ interface ComparisonVars {
 
   /** HTML contains <a> elements */
   firstFailed: string;
+  firstFailedCount: number;
   /** HTML contains <a> elements */
   secondFailed: string;
+  secondFailedCount: number;
 
   /** HTML contains <a> elements */
   onlyFirstFailed: string;
+  onlyFirstFailedCount: number;
   /** HTML contains <a> elements */
   onlySecondFailed: string;
+  onlySecondFailedCount: number;
 
   /** HTML contains <a> elements */
   bothFailed: string;
+  bothFailedCount: number;
 }
 
 interface ComparisonLinks {
@@ -70,19 +75,19 @@ export class ComparisonComponent implements Component, OnBeforeInsert, OnBeforeR
     <div class="${this.prefix}">
       <div class="${this.prefix}-grid" data-select="grid"></div>
 
-      <h3 class="${this.prefix}-heading">All Failed Tests in {{ firstId }}:</h3>
+      <h3 class="${this.prefix}-heading">All Failed Tests in {{ firstId }} ({{ firstFailedCount }}):</h3>
       <div class="${this.prefix}-failed-list">{{ firstFailed }}</div>
 
-      <h3 class="${this.prefix}-heading">All Failed Tests in {{ secondId }}:</h3>
+      <h3 class="${this.prefix}-heading">All Failed Tests in {{ secondId }} ({{ secondFailedCount }}):</h3>
       <div class="${this.prefix}-failed-list">{{ secondFailed }}</div>
 
-      <h3 class="${this.prefix}-heading">Tests Failed in {{ firstId }}, but passed in {{ secondId }}:</h3>
+      <h3 class="${this.prefix}-heading">Tests Failed in {{ firstId }}, but passed in {{ secondId }} ({{ onlyFirstFailedCount }}):</h3>
       <div class="${this.prefix}-failed-list">{{ onlyFirstFailed }}</div>
 
-      <h3 class="${this.prefix}-heading">Tests Failed in {{ secondId }}, but passed in {{ firstId }}:</h3>
+      <h3 class="${this.prefix}-heading">Tests Failed in {{ secondId }}, but passed in {{ firstId }} ({{ onlySecondFailedCount }}):</h3>
       <div class="${this.prefix}-failed-list">{{ onlySecondFailed }}</div>
 
-      <h3 class="${this.prefix}-heading">Tests Failed in both builds:</h3>
+      <h3 class="${this.prefix}-heading">Tests Failed in both builds ({{ bothFailedCount }}):</h3>
       <div class="${this.prefix}-failed-list">{{ bothFailed }}</div>
     </div>
   `);
@@ -140,14 +145,27 @@ export class ComparisonComponent implements Component, OnBeforeInsert, OnBeforeR
     const onlySecondFailed = this.makeFailedTestsListHtml(res.onlySecond);
     const bothFailed       = this.makeFailedTestsListHtml(res.both);
 
+    const firstFailedCount      = res.first.failedTests.length;
+    const secondFailedCount     = res.second.failedTests.length;
+    const onlyFirstFailedCount  = res.onlyFirst.length;
+    const onlySecondFailedCount = res.onlySecond.length;
+    const bothFailedCount       = res.both.length;
+
     const tplRef = this.mainRenderer({
       firstId: res.first.id,
       secondId: res.second.id,
+
       firstFailed,
       secondFailed,
       onlyFirstFailed,
       onlySecondFailed,
       bothFailed,
+
+      firstFailedCount,
+      secondFailedCount,
+      onlyFirstFailedCount,
+      onlySecondFailedCount,
+      bothFailedCount,
     });
 
     const gridComp = new BuildsGridComponent(this.$dom, this.$config);
