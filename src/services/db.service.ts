@@ -90,6 +90,15 @@ export class DbService implements OnInit {
     }
   }
 
+  public compareTwoSelectedBuild() {
+    const ids = this.getSelectedBuildIds();
+    if (ids.length !== 2) {
+      throw new Error(`Comparison requires 2 build selected. Now ${ids.length} build selected`);
+    }
+    const builds = ids.map(id => this.getBuildById(id));
+    return builds;
+  }
+
   private save() {
     // Prototype.js breaks JSON.stringify. We should use Prototype.js if it loaded.
     const dataAsStr = typeof Object.toJSON === 'function'

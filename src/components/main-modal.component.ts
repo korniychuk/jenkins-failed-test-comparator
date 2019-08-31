@@ -110,17 +110,31 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
 
   private styles = `
       body > * {
-        transition: filter ${this.transitionTimeMs}ms ease-in-out;
+        transition: filter ${ this.transitionTimeMs }ms ease-in-out;
       }
-      body.${this.openedBodyCssClass} > * {
+      body.${ this.openedBodyCssClass } > * {
         filter: blur(4px);
       }
 
-      body.${this.openedBodyCssClass} > .${this.prefix}-backdrop {
+      body.${ this.openedBodyCssClass } > .${ this.prefix }-backdrop {
         filter: none;
       }
 
-      .${this.prefix}-backdrop {
+      /* Ripple effect */
+      .${this.prefix} .ripple {
+        background-position: center;
+        transition: background 0.8s;
+      }
+      .${this.prefix} .ripple:hover {
+        background: #47a7f5 radial-gradient(circle, transparent 1%, #47a7f5 1%) center/15000%;
+      }
+      .${this.prefix} .ripple:active {
+        background-color: #6eb9f7;
+        background-size: 100%;
+        transition: background 0s;
+      }
+
+      .${ this.prefix }-backdrop {
         position: fixed;
         top: 0;
         bottom: 0;
@@ -131,102 +145,114 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
         align-items: center;
         z-index: 10000000;
         
-        transition: background-color ${this.transitionTimeMs}ms ease-in-out;
+        transition: background-color ${ this.transitionTimeMs }ms ease-in-out;
         background-color: transparent;
       }
-      .${this.openedBackdropCssClass} {
+      .${ this.openedBackdropCssClass } {
         filter: none;
         background-color: rgba(0, 0, 0, 0.1);
       }
-      .${this.prefix} {
+      .${ this.prefix } {
         display: flex;
         flex-direction: column;
         box-shadow: 0 0 40px 0 rgba(0,0,0,0.5);
         background: #fff;
         margin-top: 100%;
         opacity: 0;
-        transition: all ${this.transitionTimeMs}ms ease-in-out;
+        transition: all ${ this.transitionTimeMs }ms ease-in-out;
+        border-radius: 2px;
       }
-      .${this.openedBackdropCssClass} .${this.prefix} {
+      .${ this.openedBackdropCssClass } .${ this.prefix } {
         margin-top: 0;
         opacity: 1;
       }
-      .${this.prefix}--smw {
+      .${ this.prefix }--smw {
         width: 400px;
       }
-      .${this.prefix}--sm {
+      .${ this.prefix }--sm {
         width: 400px;
         height: 300px;
       }
-      .${this.prefix}--md {
+      .${ this.prefix }--md {
         width: 600px;
         height: 400px;
       }
-      .${this.prefix}--lg {
+      .${ this.prefix }--lg {
         width: 900px;
         height: 550px;
       }
-      .${this.prefix}__header {
-        /*width: 90%;*/
+      .${ this.prefix }__header {
         height: 44px;
         flex: 0 0 44px;
         padding: 12px 30px;
         overflow: hidden;
-        background: #e2525c; 
+        background-color: #2196f3;
       }
-      .${this.prefix}__title {
+      .${ this.prefix }__title {
         margin: 1px 0;
         color: #fff;
       }
-      .${this.prefix}__close {
+      /* @todo: add hover */
+      .${ this.prefix }__close {
         font-size: 28px;
         display: block;
         float: right;
+        width: 30px;
+        height: 30px;
+        line-height: 27px;
+        border-radius: 50%;
+        text-align: center;
+        margin-top: -5px;
+        margin-right: -7px;
+
         color: #fff;
         font-weight: bold;
-        line-height: 15px;
         cursor: pointer;
       }
-      .${this.prefix}__content {
+      .${ this.prefix }__content {
         padding: 12px 30px;
         flex: 1 0 auto;
         height: 100px;
       }
-      .${this.prefix}__actions {
+      .${ this.prefix }__actions {
         flex: 0 0 66px;
         height: 66px;
         display: flex;
         justify-content: flex-end;
         padding: 15px;
       }
-      .${this.prefix}__action {
+      /* @todo: add hover */
+      .${ this.prefix }__action {
         padding: 0 35px;
         font-family: 'Montserrat', Arial, Helvetica, sans-serif;
         text-align: center;
         text-decoration: none;
         /*text-transform: capitalize;*/
-        color: #fff;
-        border-radius: 0;
+        color: white;
+        border-radius: 2px;
         border: none;
-        background: #e2525c; 
         font-weight: bold;
         font-size: 1.2em;
         height: 100%;
         line-height: 38px;
         cursor: pointer;
+        color: white;
+        background-color: #2196f3;
+        box-shadow: 0 0 4px #999;
+        outline: none;
       }
-      * + .${this.prefix}__action {
+      * + .${ this.prefix }__action {
         margin-left: 15px;
       }
-      .${this.prefix}__action:disabled {
-        background: #f99;
+      .${ this.prefix }__action:disabled {
+        background-color: #70BFFF !important;
         cursor: not-allowed;
       }
     `;
 
   private backdropRenderer = this.$dom.makeRenderer(`<div class="${ this.prefix }-backdrop"></div>`);
   private actionButtonInterpolator = this.$dom.makeInterpolator<ActionButtonVars>(`
-      <button class="${this.prefix}__action"
+      <button class="${this.prefix}__action ripple"
               title="{{ tooltip }}"
               data-select-all="action"
               data-action-button-idx="{{ actionButtonIdx }}"
@@ -235,7 +261,7 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
   private modalRenderer = this.$dom.makeRenderer<MainModalVars, ModalTemplateRef>(`
     <div class="${ this.prefix } ${ this.prefix }--{{ size }}" data-select="modal">
       <div class="${ this.prefix }__header">
-        <a role="button" class="${ this.prefix }__close" data-select="close">&times;</a>
+        <a role="button" class="${ this.prefix }__close ripple" data-select="close">&times;</a>
         <h3 class="${ this.prefix }__title">{{ title }}</h3>
       </div>
       <div class="${ this.prefix }__content" data-select="content"></div>

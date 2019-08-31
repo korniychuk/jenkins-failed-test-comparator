@@ -31,13 +31,20 @@ export class ModalsService {
     comp.insertToBody(params);
   }
 
+  // @todo: decompose this method
   public async openMainGrid(): Promise<void> {
     const comp = new MainModalComponent(this.$dom, this.$config);
 
     const actions: ModalActionButtonDef[] = [
       {
+        name: 'Compare',
+        cb: () => {
+          const result = this.$db.compareTwoSelectedBuild();
+          console.log('Compare', result);
+        }
+      },
+      {
         name: 'Retrieve',
-        tooltip: 'Retrieve build info from the current page and save to compare in the future',
         cb: () => {
           const build = this.$jenkins.retrieveBuild();
           this.$db.saveBuild(build);
@@ -56,7 +63,7 @@ export class ModalsService {
     const onBuildClick = ({ build, selected }: BuildClickParams): void => {
       this.$db.toggleBuildSelection(build.id, !selected);
       refreshGrid();
-      console.log(build, selected);
+      validateCompareBtn();
     };
     const gridComp = new MainGridComponent(this.$dom, this.$config);
     gridComp.refresh({ onBuildClick });
@@ -85,13 +92,24 @@ export class ModalsService {
        .sort(([a], [b]) => +a - +b)
        .map(([, btn$]) => btn$) as HTMLButtonElement[];
 
-    const retrieveBtn$ = buttons$[0];
+    const compareBtn$ = buttons$[0];
+    const retrieveBtn$ = buttons$[1];
 
-    // Handle retrieve button
+    // Validate retrieve button on modal open
     const canRetrieve = this.$jenkins.isPageHasInfoAboutFailedTests();
     retrieveBtn$.disabled = !canRetrieve;
     retrieveBtn$.title = canRetrieve
-                         ? 'Click to retrieve information about failed tests on this page'
-                         : 'This page doesn\'t have any information about failed tests';
+         ? 'Retrieve build info from the current page and save to compare in the future'
+         : 'This page doesn\'t have any information about failed tests';
+
+    const validateCompareBtn = () => {
+      const valid = this.$db.getSelectedBuildIds().length == 2;
+      compareBtn$.disabled = !valid;
+      compareBtn$.title = valid
+         ? 'Compare two selected builds'
+         : 'Select two builds first';
+    };
+
+    validateCompareBtn();
   }
 }

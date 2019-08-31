@@ -62,12 +62,14 @@ export class MainGridComponent implements Component, OnBeforeInsert, OnAfterInse
         }
         .${ this.prefix } tbody tr {
           cursor: pointer;
+          transition: background-color .25s ease-in-out;
         }
         .${ this.prefix } tbody tr:hover {
-          background: #faa;
+          background-color: #A1EEEA;
+          transition: background-color .15s ease-in-out;
         }
         .${ this.prefix } tbody tr.selected {
-          background: #afa;
+          background-color: #ABFFAB;
         }
       `;
 
