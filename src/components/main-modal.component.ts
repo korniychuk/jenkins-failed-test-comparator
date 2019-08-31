@@ -287,6 +287,9 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
 
     this.params.onBeforeRemove(this.ref!);
 
+    // for triggering hooks on the all child components
+    await this.$dom.remove(this.ref!.childComponentRefs);
+
     // Removing global styles
     if (MainModalComponent.openedModalRefs.size === 1) {
       this.lastDestroyCbs.clear();
@@ -332,8 +335,8 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
 
     if (createRoot) {
       // @todo: wrong typings on the next lines
-      const tplRef: TemplateRef<ModalLinks, ActionButtonLinksAll> = this.backdropRenderer({}) as any;
-      this.ref = { ...tplRef, componentInstance: this };
+      const tplRef: TemplateRef<ModalLinks, ActionButtonLinksAll> = this.backdropRenderer() as any;
+      this.ref = { ...tplRef, componentInstance: this, childComponentRefs: [] };
     } else if (!this.ref) {
       throw new Error(`.render() No .ref`);
     } else {
@@ -366,6 +369,9 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
     const contentToInsert = this.params.content; // preserving links to the array
     this.$dom.append(content$, contentToInsert);
     this.renderDestroyCbs.add(() => this.$dom.remove(contentToInsert));
+
+    const childComponents = contentToInsert.filter(v => this.$dom.isComponentRef(v)) as ComponentRef[];
+    this.ref.childComponentRefs.push(...childComponents);
 
     return this.ref;
   }

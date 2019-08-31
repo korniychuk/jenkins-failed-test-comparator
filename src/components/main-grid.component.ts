@@ -1,11 +1,36 @@
 import { DomService } from '../services/dom.service';
 import { ConfigService } from '../services/config.service';
-import { TemplateRef } from '../models';
+import {
+  Build,
+  BuildInfo,
+  Component,
+  ComponentRef, OnBeforeInsert,
+  OnBeforeRemove,
+  TemplateRef,
+  Vars,
+} from '../models';
 import { Hell } from '../hell';
 
-type MainGridTemplateRef = TemplateRef<any, any>;
+type MainGridComponentRef = ComponentRef;
 
-export class MainGridComponent {
+interface MainGridParams {
+  builds: Build[];
+}
+
+interface CellVars {
+  content: string;
+}
+
+interface RowVars extends Omit<BuildInfo, 'dynamic'> {
+  dynamic: string;
+}
+
+interface GridVars {
+  dynamicHeadings: string;
+  rows: string;
+}
+
+export class MainGridComponent implements Component, OnBeforeInsert, OnBeforeRemove {
 
   private prefix = `${this.$config.prefix}-grid`;
 
@@ -36,90 +61,95 @@ export class MainGridComponent {
         }
       `;
 
-  private rowTpl = `<tr>
-                      <td>{{ num }}</td>
-                      <td>{{ name }}</td>
-                      <td>{{ date }}</td>
-                      {{ dynamic }}
-                    </tr>`;
-  private gridTpl = `<table>
-                       <thead>
-                         <tr>
-                           <th>#</th>
-                           <th>Name</th>
-                           <th>Date</th>
-                           {{ dynamicHeadings }}
-                         </tr>
-                       </thead>
-                       <tbody>{{ rows }}</tbody>
-                     </table>`;
+  private tdInterpolator = this.$dom.makeInterpolator<CellVars>(`<td>{{ content }}</td>`);
+  private thInterpolator = this.$dom.makeInterpolator<CellVars>(`<td>{{ content }}</td>`);
+  private rowInterpolator = this.$dom.makeInterpolator<RowVars>(`
+    <tr>
+      <td>{{ num }}</td>
+      <td>{{ name }}</td>
+      <td>{{ date }}</td>
+      {{ dynamic }}
+    </tr>
+  `);
+  private gridRenderer = this.$dom.makeRenderer<GridVars>(`
+    <div class="${this.prefix}">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Date</th>
+            {{ dynamicHeadings }}
+          </tr>
+        </thead>
+        <tbody>{{ rows }}</tbody>
+      </table>
+    </div>
+  `);
 
-  private tdRenderer = this.$dom.vv(`<td>{{ content }}</td>`);
-  private thRenderer = this.$dom.vv(`<td>{{ content }}</td>`);
-  private rowRenderer = this.$dom.vv(this.rowTpl);
+  private ref?: MainGridComponentRef;
 
-  private ref?: MainGridTemplateRef;
-
-  private lastDestroyCbs = new Hell();
   private destroyCbs = new Hell();
   private renderDestroyCbs = new Hell(this.destroyCbs);
+
+  private params: Required<MainGridParams> = {
+    builds: [],
+  };
+  private paramKeys = Object.keys(this.params) as (keyof Required<MainGridParams>)[];
 
   public constructor(
     private readonly $dom: DomService,
     private readonly $config: ConfigService,
   ) {}
 
+  public makeRef(): MainGridComponentRef {
+    return this.render();
+  }
 
-  render(createRoot = false): MainGridTemplateRef {
+  public refresh(params: Partial<MainGridParams>): void {
+    this.refreshParams(params);
+  }
+
+  public onBeforeInsert(): void {
+    this.destroyCbs.add(this.$dom.insertGlobalStyles(this.styles));
+  }
+
+  public onBeforeRemove(): void {
+    this.destroyCbs.clear();
+  }
+
+  private render(): MainGridComponentRef {
     this.renderDestroyCbs.clear();
 
-    if (createRoot) {
-      const gridHtml = this.({});
-      this.ref = this.$dom.compile(gridHtml);
-    } else if (!this.ref) {
-      throw new Error(`.render() No .ref`);
-    } else {
-      this.$dom.remove(this.ref.links.modal);
-      this.ref.links = {} as any;
-      this.ref.linksAll = {} as any;
-    }
-
-    const builds = data.builds;
-    if (!builds) {
+    if (!this.params.builds) {
       throw new Error(`No builds param`);
     }
 
-    const dynamicKeys = builds[0] && Object.keys(builds[0].dynamic) || [];
+    const dynamicKeys = this.params.builds[0] && Object.keys(this.params.builds[0].dynamic) || [];
 
-    const row = `<tr>
-                     <td>{{ num }}</td>
-                     <td>{{ name }}</td>
-                     <td>{{ date }}</td>
-                     {{ dynamic }}
-                   </tr>`;
 
-    const rows = builds.map(r =>
-      this._modal.interpolate(row, {
+    const rows = this.params.builds.map((r: Build) =>
+      this.rowInterpolator({
         ...r,
-        dynamic: dynamicKeys.map(k => `<td>${ r.dynamic[k] }</td>`).join('\n'),
+        dynamic: dynamicKeys.map(k => this.tdInterpolator({ content: r.dynamic[k] })).join(''),
       }),
     ).join('\n');
 
-    const dynamicHeads = dynamicKeys.map(k => `<th>${ k }</th>`).join('\n');
-    const gridHtml = `<table>
-                         <thead>
-                           <tr>
-                             <th>#</th>
-                             <th>Name</th>
-                             <th>Date</th>
-                             ${dynamicHeads}
-                           </tr>
-                         </thead>
-                         <tbody>${rows}</tbody>
-                       </table>
-                      `;
+    const dynamicHeadings = dynamicKeys.map(k => this.thInterpolator({ content: k })).join('\n');
 
-    this._mainModalGrid$.innerHTML = gridHtml;
+    const tplRef = this.gridRenderer({
+      rows,
+      dynamicHeadings,
+    });
+    this.ref = { ...tplRef, componentInstance: this, childComponentRefs: [] };
+
     return this.ref;
+  }
+
+  private refreshParams(params: Partial<MainGridParams>): void {
+    this.paramKeys
+        .filter(key => this.params[key] !== undefined)
+        // @ts-ignore
+        .forEach(key => this.params[key] = params[key]);
   }
 }

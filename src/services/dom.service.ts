@@ -152,17 +152,18 @@ export class DomService implements OnDestroy {
   /**
    * Insert variables to the template
    */
-  public interpolate<T extends Vars>(tpl: string, vars: T): string {
+  public interpolate<T>(tpl: string, vars: T): string {
     return this.makeInterpolator(tpl)(vars);
   }
 
-  public makeInterpolator<T extends Vars>(tpl: string): (vars: T) => string {
-    return (vars: Vars) => Object
+  public makeInterpolator<T>(tpl: string): (vars: T) => string {
+    return (vars: T) => Object
       .keys(vars)
       .reduce(
         (localTpl, varName) =>
           localTpl.replace(
             new RegExp(`{{\\s*${ varName }\\s*}}`, 'g'),
+            // @ts-ignore
             vars[varName] !== undefined ? String(vars[varName]) : '',
           ),
         tpl,
@@ -170,19 +171,19 @@ export class DomService implements OnDestroy {
   }
 
   public makeRenderer<
-    V extends Vars = {},
+    V = {},
     T extends TemplateRef<any, any> = TemplateRef<{}, {}>
-  >(tpl: string): (vars: V) => T {
+  >(tpl: string): (vars?: V) => T {
     const interpolator = this.makeInterpolator(tpl);
-    return (vars: Vars) => this.compile(interpolator(vars));
+    return (vars: V = {} as V) => this.compile(interpolator(vars));
+  }
+
+  public isComponentRef(entity: ComponentRef | unknown): entity is ComponentRef {
+    return !!((entity as ComponentRef).root$ && (entity as ComponentRef).componentInstance);
   }
 
   private isTemplateRef(entity: TemplateRef | unknown): entity is TemplateRef {
     return !!((entity as TemplateRef).root$ && (entity as TemplateRef).linksAll);
-  }
-
-  private isComponentRef(entity: ComponentRef | unknown): entity is ComponentRef {
-    return !!((entity as ComponentRef).root$ && (entity as ComponentRef).componentInstance);
   }
 
 }

@@ -6,6 +6,7 @@ import {
 
 import { DomService } from './dom.service';
 import { ConfigService } from './config.service';
+import { MainGridComponent } from '../components/main-grid.component';
 
 export class ModalsService {
   public isMainGridOpened = false;
@@ -38,9 +39,11 @@ export class ModalsService {
       },
     ];
 
+    const gridComp = new MainGridComponent(this.$dom, this.$config);
+    const gridRef = gridComp.makeRef();
 
     const params: MainModalParams = {
-      content: [],
+      content: [ gridRef ],
       actions,
       size: 'lg',
       title: 'Failed Tests Comparator',
