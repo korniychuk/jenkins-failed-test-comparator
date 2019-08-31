@@ -75,16 +75,16 @@ export class ComparisonComponent implements Component, OnBeforeInsert, OnBeforeR
     <div class="${this.prefix}">
       <div class="${this.prefix}-grid" data-select="grid"></div>
 
-      <h3 class="${this.prefix}-heading">All Failed Tests in {{ firstId }} ({{ firstFailedCount }}):</h3>
+      <h3 class="${this.prefix}-heading">All Failed Tests in #{{ firstId }} ({{ firstFailedCount }}):</h3>
       <div class="${this.prefix}-failed-list">{{ firstFailed }}</div>
 
-      <h3 class="${this.prefix}-heading">All Failed Tests in {{ secondId }} ({{ secondFailedCount }}):</h3>
+      <h3 class="${this.prefix}-heading">All Failed Tests in #{{ secondId }} ({{ secondFailedCount }}):</h3>
       <div class="${this.prefix}-failed-list">{{ secondFailed }}</div>
 
-      <h3 class="${this.prefix}-heading">Tests Failed in {{ firstId }}, but passed in {{ secondId }} ({{ onlyFirstFailedCount }}):</h3>
+      <h3 class="${this.prefix}-heading">Tests Failed in #{{ firstId }}, but passed in #{{ secondId }} ({{ onlyFirstFailedCount }}):</h3>
       <div class="${this.prefix}-failed-list">{{ onlyFirstFailed }}</div>
 
-      <h3 class="${this.prefix}-heading">Tests Failed in {{ secondId }}, but passed in {{ firstId }} ({{ onlySecondFailedCount }}):</h3>
+      <h3 class="${this.prefix}-heading">Tests Failed in #{{ secondId }}, but passed in #{{ firstId }} ({{ onlySecondFailedCount }}):</h3>
       <div class="${this.prefix}-failed-list">{{ onlySecondFailed }}</div>
 
       <h3 class="${this.prefix}-heading">Tests Failed in both builds ({{ bothFailedCount }}):</h3>
