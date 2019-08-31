@@ -246,7 +246,7 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
 
     // Refreshing params & rerender
     this.refreshParams(params);
-    const ref = this.render(true);
+    const ref = await this.render(true);
 
     // Inserting root element to the <body>
     return this.$dom.append(document.body, ref);
@@ -262,21 +262,22 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
     MainModalComponent.openedModalRefs.delete(this);
   }
 
-  public refresh(params: Partial<MainModalParams>): void {
+  public async refresh(params: Partial<MainModalParams>): Promise<void> {
     this.refreshParams(params);
 
-    if (this.isInserted) this.render();
+    if (this.isInserted) await this.render();
   }
 
   public onAfterInsert(): void {
+    if (this.params.styles) {
+      this.destroyCbs.add(this.$dom.insertGlobalStyles(this.params.styles));
+    }
     // Inserting styles
     if (MainModalComponent.openedModalRefs.size === 1) {
       this.lastDestroyCbs.add(this.$dom.insertGlobalStyles(this.styles));
       this.bindEscToClose();
     }
-    if (this.params.styles) {
-      this.destroyCbs.add(this.$dom.insertGlobalStyles(this.params.styles));
-    }
+    this.bindEvents(this.ref!);
 
     this.params.onAfterInsert(this.ref!);
     this.toggle(true);
@@ -330,7 +331,7 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
     return true;
   }
 
-  private render(createRoot = false): MainModalComponentRef {
+  private async render(createRoot = false): Promise<MainModalComponentRef> {
     this.renderDestroyCbs.clear();
 
     if (createRoot) {
@@ -340,7 +341,7 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
     } else if (!this.ref) {
       throw new Error(`.render() No .ref`);
     } else {
-      this.$dom.remove(this.ref.links.modal);
+      await this.$dom.remove(this.ref.links.modal);
       this.ref.links = {} as any;
       this.ref.linksAll = {} as any;
     }
@@ -359,15 +360,13 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
       title: this.params.title,
     });
 
-    this.$dom.append(this.ref, modalRef);
+    await this.$dom.append(this.ref, modalRef);
     this.ref.links = { ...this.ref.links, ...modalRef.links };
     this.ref.linksAll = { ...this.ref.linksAll, ...modalRef.linksAll };
 
-    this.bindEvents(this.ref);
-
     const content$ = this.ref.links.content;
     const contentToInsert = this.params.content; // preserving links to the array
-    this.$dom.append(content$, contentToInsert);
+    await this.$dom.append(content$, contentToInsert);
     this.renderDestroyCbs.add(() => this.$dom.remove(contentToInsert));
 
     const childComponents = contentToInsert.filter(v => this.$dom.isComponentRef(v)) as ComponentRef[];
@@ -394,10 +393,10 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
       }
 
       const cb = (event: MouseEvent) => def.cb({ ...baseArgs, event, button$ });
-      this.renderDestroyCbs.add(this.$dom.addEventListener(button$, 'click', cb));
+      this.destroyCbs.add(this.$dom.addEventListener(button$, 'click', cb));
     });
 
-    this.renderDestroyCbs.add(
+    this.destroyCbs.add(
       this.$dom.addEventListener(
         ref.links.close,
         'click',
