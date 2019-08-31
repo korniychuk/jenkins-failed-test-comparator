@@ -89,16 +89,16 @@ export class DomService implements OnDestroy {
     return newChild;
   }
 
-  public async remove<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(node: T): Promise<T>;
-  public async remove<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(nodes: T[]): Promise<T[]>;
-  public async remove<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(arg: T | T[]): Promise<T | T[]> {
+  public async remove<T extends Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(node: T): Promise<T>;
+  public async remove<T extends Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(nodes: T[]): Promise<T[]>;
+  public async remove<T extends Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(arg: T | T[]): Promise<T | T[]> {
     return arg instanceof Array
            ? Promise.all(arg.map(async (node) => await this.removeOne(node)))
            : await this.removeOne(arg);
   }
 
-  private async removeOne<T extends Element | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(entity: T): Promise<T> {
-    const node = this.isTemplateRef(entity) ? entity.root$ : entity as Element;
+  private async removeOne<T extends Node | ComponentRef<ComponentDev, any, any> | TemplateRef<any, any>>(entity: T): Promise<T> {
+    const node = this.isTemplateRef(entity) ? entity.root$ : entity as Node;
     const parent = node.parentElement || undefined;
     const comp: ComponentDev | undefined = this.isComponentRef(entity) ? entity.componentInstance : undefined;
 

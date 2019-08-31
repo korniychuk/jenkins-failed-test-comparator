@@ -19,6 +19,10 @@ export class DbService implements OnInit {
   private currentBuildJobName?: string;
 
 
+  public get hasSelectedBuildJob(): boolean {
+    return !!this.currentBuildJobName;
+  }
+
   public getCurrentBuildJob(): DbBuildJobData {
     if (!this.currentBuildJobName) {
       throw new Error(`An attempt to access current build job until the job selected`);
@@ -44,7 +48,7 @@ export class DbService implements OnInit {
     return bj.buildsOrder.map(id => bj.builds[id]);
   }
 
-  public saveBuild(build: Build) {
+  public saveBuild(build: Build): void {
     const bj = this.getCurrentBuildJob();
     const was = !!bj.builds[build.id];
     bj.builds[build.id] = build;
@@ -54,6 +58,11 @@ export class DbService implements OnInit {
     }
 
     this.save();
+  }
+
+  public getSelectedBuildIds(): number[] {
+    const bj = this.getCurrentBuildJob();
+    return Object.keys(bj.selectedBuildIds).map(v => +v);
   }
 
   public toggleBuildSelection(buildId: number, select: boolean): void {

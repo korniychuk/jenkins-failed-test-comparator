@@ -11,7 +11,10 @@ import { ConfigService } from '../services/config.service';
 import { later } from '../utils';
 import { Hell } from '../hell';
 
-export type ModalSizes = 'sm' | 'md' | 'lg';
+/**
+ * smw - means small width and auto height.
+ */
+export type ModalSizes = 'smw' | 'sm' | 'md' | 'lg';
 
 interface ModalLinks {
   modal: HTMLDivElement;
@@ -27,7 +30,7 @@ type ModalTemplateRef = TemplateRef<ModalLinks, {}>;
 type MainModalComponentRef = ComponentRef<MainModalComponent, ModalLinks, ActionButtonLinksAll>;
 
 interface ActionButtonVars extends Vars{
-  internalId: number;
+  actionButtonIdx: number;
   name: string;
   tooltip: string;
 }
@@ -52,7 +55,7 @@ export interface ModalActionButtonDef {
 }
 
 export interface MainModalParams {
-  content: (HTMLElement | TemplateRef<any, any>)[];
+  content: (Node | TemplateRef<any, any>)[];
   title?: string;
   size?: ModalSizes;
 
@@ -87,7 +90,7 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
     size: 'md',
     styles: '',
     actions: [
-      { name: 'OK', cb: () => {} },
+      { name: 'OK', cb: ({ close }) => close() },
     ],
     onAfterInsert: () => {},
     onBeforeRemove: () => {},
@@ -147,6 +150,9 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
       .${this.openedBackdropCssClass} .${this.prefix} {
         margin-top: 0;
         opacity: 1;
+      }
+      .${this.prefix}--smw {
+        width: 400px;
       }
       .${this.prefix}--sm {
         width: 400px;
@@ -212,6 +218,10 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
       * + .${this.prefix}__action {
         margin-left: 15px;
       }
+      .${this.prefix}__action:disabled {
+        background: #f99;
+        cursor: not-allowed;
+      }
     `;
 
   private backdropRenderer = this.$dom.makeRenderer(`<div class="${ this.prefix }-backdrop"></div>`);
@@ -219,7 +229,7 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
       <button class="${this.prefix}__action"
               title="{{ tooltip }}"
               data-select-all="action"
-              data-internal-id="{{ internalId }}"
+              data-action-button-idx="{{ actionButtonIdx }}"
       >{{ name }}</button>
   `);
   private modalRenderer = this.$dom.makeRenderer<MainModalVars, ModalTemplateRef>(`
@@ -350,7 +360,7 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
       .map(({ name, tooltip }, i) => this.actionButtonInterpolator({
         name,
         tooltip: tooltip !== undefined ? this.$dom.sanitizeAttrValue(tooltip) : '',
-        internalId: i,
+        actionButtonIdx: i,
       }))
       .join('');
 
@@ -383,9 +393,9 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
     const actionButtons: HTMLButtonElement[] = ref.linksAll.action;
 
     actionButtons.forEach(button$ => {
-      const idx = button$.getAttribute('data-internal-id');
+      const idx = button$.getAttribute('data-action-button-idx');
       if (idx === null) {
-        throw new Error(`Action doesn't have data-internal-id attribute`);
+        throw new Error(`Action doesn't have data-action-button-idx attribute`);
       }
       const def = this.params.actions[+idx];
       if (!def) {
@@ -424,7 +434,7 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
 
   private refreshParams(params: Partial<MainModalParams>): void {
     this.paramKeys
-        .filter(key => this.params[key] !== undefined)
+        .filter(key => params[key] !== undefined)
         // @ts-ignore
         .forEach(key => this.params[key] = params[key]);
   }

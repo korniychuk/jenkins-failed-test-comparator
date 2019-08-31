@@ -21,9 +21,9 @@ export class JenkinsService {
     };
   }
 
-  public retrieveJobName(): string | undefined {
+  public retrieveBuildJobName(): string | undefined {
     const name = location.pathname.replace(/^((?:\/job\/[\w-]+)+).*?$/, '$1');
-    return name || undefined;
+    return name.length > 5 ? name : undefined;
   }
 
   private retrieveBuildInfo(): BuildInfo {
@@ -32,7 +32,7 @@ export class JenkinsService {
       throw new Error(`Can't find <h1> or it hasn't .textContent`);
     }
 
-    const match = h1$.textContent.match(/Build (?<num>\d+):\s+(?<name>\w+)\s*\((?<date>[^()]+)\)/) as ESNextRegExpMatchArray | null;
+    const match = h1$.textContent.match(/Build (?<id>\d+):\s+(?<name>\w+)\s*\((?<date>[^()]+)\)/) as ESNextRegExpMatchArray | null;
     if (!match) {
       throw new Error(`Can not parse <h1>`);
     }
