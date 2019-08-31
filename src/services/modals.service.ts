@@ -2,10 +2,11 @@ import {
   MainModalComponent,
   MainModalParams,
   ModalActionButtonDef,
-} from '../components/main-modal.component';
-import { BuildsGridClickParams, BuildsGridComponent } from '../components/builds-grid.component';
+  BuildsGridClickParams,
+  BuildsGridComponent,
+  ComparisonComponent,
+} from '../components';
 import { ComparisonResult } from '../models';
-import { ComparisonComponent } from '../components/comparison.component';
 
 import { DomService } from './dom.service';
 import { ConfigService } from './config.service';
