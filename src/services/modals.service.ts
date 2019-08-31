@@ -3,7 +3,7 @@ import {
   MainModalParams,
   ModalActionButtonDef,
 } from '../components/main-modal.component';
-import { BuildClickParams, MainGridComponent } from '../components/main-grid.component';
+import { MainGridBuildClickParams, BuildsGridComponent } from '../components/main-grid.component';
 
 import { DomService } from './dom.service';
 import { ConfigService } from './config.service';
@@ -60,12 +60,12 @@ export class ModalsService {
       },
     ];
 
-    const onBuildClick = ({ build, selected }: BuildClickParams): void => {
+    const onBuildClick = ({ build, selected }: MainGridBuildClickParams): void => {
       this.$db.toggleBuildSelection(build.id, !selected);
       refreshGrid();
       validateCompareBtn();
     };
-    const gridComp = new MainGridComponent(this.$dom, this.$config);
+    const gridComp = new BuildsGridComponent(this.$dom, this.$config);
     gridComp.refresh({ onBuildClick });
 
     const refreshGrid = () => {

@@ -192,7 +192,6 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
         margin: 1px 0;
         color: #fff;
       }
-      /* @todo: add hover */
       .${ this.prefix }__close {
         font-size: 28px;
         display: block;
@@ -221,7 +220,6 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
         justify-content: flex-end;
         padding: 15px;
       }
-      /* @todo: add hover */
       .${ this.prefix }__action {
         padding: 0 35px;
         font-family: 'Montserrat', Arial, Helvetica, sans-serif;

@@ -2,6 +2,7 @@ import { Config, HotKeyConfig, OnInit } from '../models';
 
 export class ConfigService implements OnInit, Config {
 
+  public jiraUrl: string = '';
   public prefix: string = 'ftc';
   public dbName: string = `${ this.prefix }-db`;
   public hotKeys: Config['hotKeys'] = {
@@ -24,6 +25,14 @@ export class ConfigService implements OnInit, Config {
       } else {
         console.warn(new Error('.openMainModal Hot Key is invalid.'), openMainModalHotKey);
       }
+    }
+
+    const jiraUrl = window.ftcConfig
+                    && window.ftcConfig.jiraUrl;
+    if (jiraUrl) {
+      this.jiraUrl = jiraUrl;
+    } else {
+      console.error('Please specify .jiraUrl in the config');
     }
   }
 

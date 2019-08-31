@@ -43,6 +43,7 @@ export interface HotKeyConfig {
 
 export interface CustomConfig {
   dbName?: string;
+  jiraUrl?: string;
   hotKeys?: {
     openMainModal?: HotKeyConfig;
   };
@@ -51,9 +52,18 @@ export interface CustomConfig {
 export interface Config extends CustomConfig {
   prefix: string;
   dbName: string;
+  jiraUrl: string;
   hotKeys: {
     openMainModal: HotKeyConfig;
   };
+}
+
+export interface ComparisonResult {
+  first: Build;
+  second: Build;
+  onlyFirst: FailedTest[];
+  onlySecond: FailedTest[];
+  both: FailedTest[];
 }
 
 export interface OnInit {

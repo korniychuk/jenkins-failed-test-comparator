@@ -9,15 +9,15 @@ import {
 } from '../models';
 import { Hell } from '../hell';
 
-export interface BuildClickParams {
+export interface BuildsGridClickParams {
   build: Build;
   selected: boolean;
 }
 
-export interface MainGridParams {
+export interface BuildsGridParams {
   builds: Build[];
   selectedBuildIds: number[];
-  onBuildClick: (params: BuildClickParams) => void;
+  onBuildClick: (params: BuildsGridClickParams) => void;
 }
 
 interface CellVars {
@@ -37,11 +37,11 @@ interface GridVars {
 interface GridLinksAll {
   build: HTMLTableRowElement[];
 }
-type GridTemplateRef = TemplateRef<{}, GridLinksAll>;
+type BuildsGridTemplateRef = TemplateRef<{}, GridLinksAll>;
 
-type MainGridComponentRef = ComponentRef<Component, {}, GridLinksAll>;
+type BuildsGridComponentRef = ComponentRef<Component, {}, GridLinksAll>;
 
-export class MainGridComponent implements Component, OnBeforeInsert, OnAfterInsert, OnBeforeRemove, OnAfterRemove {
+export class BuildsGridComponent implements Component, OnBeforeInsert, OnAfterInsert, OnBeforeRemove, OnAfterRemove {
 
   private prefix = `${this.$config.prefix}-grid`;
 
@@ -83,7 +83,7 @@ export class MainGridComponent implements Component, OnBeforeInsert, OnAfterInse
       {{ dynamic }}
     </tr>
   `);
-  private gridRenderer = this.$dom.makeRenderer<GridVars, GridTemplateRef>(`
+  private gridRenderer = this.$dom.makeRenderer<GridVars, BuildsGridTemplateRef>(`
     <div class="${this.prefix}">
       <table>
         <thead>
@@ -99,28 +99,29 @@ export class MainGridComponent implements Component, OnBeforeInsert, OnAfterInse
     </div>
   `);
 
-  private ref?: MainGridComponentRef;
+  private ref?: BuildsGridComponentRef;
 
   private destroyCbs = new Hell();
   private renderDestroyCbs = new Hell(this.destroyCbs);
 
-  private params: Required<MainGridParams> = {
+  private params: Required<BuildsGridParams> = {
+    // @todo: implement selectable
     builds: [],
     selectedBuildIds: [],
     onBuildClick: () => {},
   };
-  private paramKeys = Object.keys(this.params) as (keyof Required<MainGridParams>)[];
+  private paramKeys = Object.keys(this.params) as (keyof Required<BuildsGridParams>)[];
 
   public constructor(
     private readonly $dom: DomService,
     private readonly $config: ConfigService,
   ) {}
 
-  public getRef(): MainGridComponentRef {
+  public getRef(): BuildsGridComponentRef {
     return this.ref || this.render();
   }
 
-  public refresh(params: Partial<MainGridParams>): void {
+  public refresh(params: Partial<BuildsGridParams>): void {
     this.refreshParams(params);
 
     if (params.selectedBuildIds || params.builds) {
@@ -153,7 +154,6 @@ export class MainGridComponent implements Component, OnBeforeInsert, OnAfterInse
       this.params.onBuildClick({ build, selected });
     };
     this.destroyCbs.add(this.$dom.addEventListener(this.ref!.root$, 'click', cb));
-    this.ref!.root$.querySelectorAll('a')
   }
 
   public onBeforeRemove(): void {
@@ -164,7 +164,7 @@ export class MainGridComponent implements Component, OnBeforeInsert, OnAfterInse
     this.ref = undefined;
   }
 
-  private render(): MainGridComponentRef {
+  private render(): BuildsGridComponentRef {
     this.renderDestroyCbs.clear();
 
     if (!this.params.builds) {
@@ -200,7 +200,7 @@ export class MainGridComponent implements Component, OnBeforeInsert, OnAfterInse
     return this.ref;
   }
 
-  private refreshParams(params: Partial<MainGridParams>): void {
+  private refreshParams(params: Partial<BuildsGridParams>): void {
     this.paramKeys
         .filter(key => params[key] !== undefined)
         // @ts-ignore

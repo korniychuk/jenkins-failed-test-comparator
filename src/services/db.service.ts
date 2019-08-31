@@ -1,4 +1,4 @@
-import { Build, OnInit } from '../models';
+import { Build, FailedTest, OnInit } from '../models';
 import { ConfigService } from './config.service';
 
 interface DbBuildJobData {
@@ -90,13 +90,24 @@ export class DbService implements OnInit {
     }
   }
 
-  public compareTwoSelectedBuild() {
+  public compareTwoSelectedBuild(): ComparisonResult {
     const ids = this.getSelectedBuildIds();
     if (ids.length !== 2) {
       throw new Error(`Comparison requires 2 build selected. Now ${ids.length} build selected`);
     }
-    const builds = ids.map(id => this.getBuildById(id));
-    return builds;
+    const [first, second] = ids.map(id => this.getBuildById(id)) as Build[];
+
+    const onlyFirst = first.failedTests.filter(a => !second.failedTests.some(b => b.id === a.id));
+    const onlySecond = second.failedTests.filter(a => !first.failedTests.some(b => b.id === a.id));
+    const both = first.failedTests.filter(a => second.failedTests.some(b => b.id === a.id));
+
+    return {
+      first,
+      second,
+      onlyFirst,
+      onlySecond,
+      both,
+    };
   }
 
   private save() {
