@@ -3,7 +3,9 @@ import {
   MainModalParams,
   ModalActionButtonDef,
 } from '../components/main-modal.component';
-import { MainGridBuildClickParams, BuildsGridComponent } from '../components/main-grid.component';
+import { BuildsGridClickParams, BuildsGridComponent } from '../components/builds-grid.component';
+import { ComparisonResult } from '../models';
+import { ComparisonComponent } from '../components/comparison.component';
 
 import { DomService } from './dom.service';
 import { ConfigService } from './config.service';
@@ -40,7 +42,7 @@ export class ModalsService {
         name: 'Compare',
         cb: () => {
           const result = this.$db.compareTwoSelectedBuild();
-          console.log('Compare', result);
+          this.openComparisonModal(result);
         }
       },
       {
@@ -60,7 +62,7 @@ export class ModalsService {
       },
     ];
 
-    const onBuildClick = ({ build, selected }: MainGridBuildClickParams): void => {
+    const onBuildClick = ({ build, selected }: BuildsGridClickParams): void => {
       this.$db.toggleBuildSelection(build.id, !selected);
       refreshGrid();
       validateCompareBtn();
@@ -111,5 +113,20 @@ export class ModalsService {
     };
 
     validateCompareBtn();
+  } // end .openMainGrid()
+
+  public openComparisonModal(result: ComparisonResult): void {
+    const comparisonComp = new ComparisonComponent(this.$dom, this.$config);
+    comparisonComp.refresh({ result });
+    const comparisonRef = comparisonComp.getRef();
+
+
+    const modal = new MainModalComponent(this.$dom, this.$config);
+    const params: MainModalParams = {
+      content: [ comparisonRef ],
+      size: 'lg',
+      title: 'Comparison Results',
+    };
+    modal.insertToBody(params);
   }
 }

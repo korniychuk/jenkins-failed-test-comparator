@@ -1,4 +1,4 @@
-import { Build, FailedTest, OnInit } from '../models';
+import { Build, ComparisonResult, OnInit } from '../models';
 import { ConfigService } from './config.service';
 
 interface DbBuildJobData {

@@ -4,7 +4,7 @@ import {
   Vars,
   ComponentRef,
   OnAfterInsert,
-  OnBeforeRemove, OnAfterRemove,
+  OnBeforeRemove,
 } from '../models';
 import { DomService } from '../services/dom.service';
 import { ConfigService } from '../services/config.service';
@@ -25,7 +25,6 @@ interface ModalLinks {
 interface ActionButtonLinksAll {
   action: HTMLButtonElement;
 }
-type ActionButtonTemplateRef = TemplateRef<{}, ActionButtonLinksAll>;
 type ModalTemplateRef = TemplateRef<ModalLinks, {}>;
 type MainModalComponentRef = ComponentRef<MainModalComponent, ModalLinks, ActionButtonLinksAll>;
 
@@ -118,6 +117,9 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
 
       body.${ this.openedBodyCssClass } > .${ this.prefix }-backdrop {
         filter: none;
+      }
+      body.${ this.openedBodyCssClass } {
+        overflow: hidden;
       }
 
       /* Ripple effect */
@@ -314,7 +316,7 @@ export class MainModalComponent implements Component, OnAfterInsert, OnBeforeRem
     this.bindEvents(this.ref!);
 
     this.params.onAfterInsert(this.ref!);
-    this.toggle(true);
+    setTimeout(() => this.toggle(true));
   }
 
   public async onBeforeRemove(): Promise<void> {

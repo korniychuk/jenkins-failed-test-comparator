@@ -105,7 +105,6 @@ export class BuildsGridComponent implements Component, OnBeforeInsert, OnAfterIn
   private renderDestroyCbs = new Hell(this.destroyCbs);
 
   private params: Required<BuildsGridParams> = {
-    // @todo: implement selectable
     builds: [],
     selectedBuildIds: [],
     onBuildClick: () => {},

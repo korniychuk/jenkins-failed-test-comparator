@@ -19,7 +19,7 @@ export interface ComponentRef<
   LinksAll extends object = { [key: string]: HTMLElement },
 > extends TemplateRef<Links, LinksAll> {
   componentInstance: Comp;
-  childComponentRefs: ComponentRef[];
+  childComponentRefs: ComponentRef<Component, any, any>[];
 }
 
 

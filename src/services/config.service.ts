@@ -32,7 +32,7 @@ export class ConfigService implements OnInit, Config {
     if (jiraUrl) {
       this.jiraUrl = jiraUrl;
     } else {
-      console.error('Please specify .jiraUrl in the config');
+      console.error('Please specify .jiraUrl in the config. I can\'t build URL for tickets');
     }
   }
 
