@@ -2,17 +2,11 @@
 
 ```javascript
 (() => {
-  const script = document.createElement('script');
-  script.src = 'http://localhost:8090/app.js?t=' + +new Date();
-  document.head.appendChild(script);
-})();
-```
-
-```javascript
-(() => {
   /*
   window.ftcConfig = {
+    jiraUrl: 'https://my-jira-domain.com',
     hotKeys: {
+      // Ctrl+Shift+X
       openMainModal: {
         key: 'X',
         ctrl: true,
@@ -23,8 +17,9 @@
   };
   */
   
+  const appUrl = 'https://raw.githubusercontent.com/korniychuk/jenkins-failed-test-comparator/master/dist/app.js';
   const script = document.createElement('script');
-  script.src = 'http://localhost:8090/app.js?t=' + +new Date();
+  script.src = appUrl + '?t=' + +new Date();
   document.head.appendChild(script);
 })();
 ```
