@@ -39,6 +39,15 @@ export class ModalsService {
 
     const actions: ModalActionButtonDef[] = [
       {
+        name: 'Clear',
+        tooltip: 'Clear whole retrieved for the builds',
+        cb: () => {
+          this.$db.clearCurrentBuildJob();
+          refreshGrid();
+          validateClearBtn();
+        }
+      },
+      {
         name: 'Compare',
         cb: () => {
           const result = this.$db.compareTwoSelectedBuild();
@@ -51,6 +60,7 @@ export class ModalsService {
           const build = this.$jenkins.retrieveBuild();
           this.$db.saveBuild(build);
           refreshGrid();
+          validateClearBtn();
         },
       },
       {
@@ -94,8 +104,9 @@ export class ModalsService {
        .sort(([a], [b]) => +a - +b)
        .map(([, btn$]) => btn$) as HTMLButtonElement[];
 
-    const compareBtn$ = buttons$[0];
-    const retrieveBtn$ = buttons$[1];
+    const clearBtn$ = buttons$[0];
+    const compareBtn$ = buttons$[1];
+    const retrieveBtn$ = buttons$[2];
 
     // Validate retrieve button on modal open
     const canRetrieve = this.$jenkins.isPageHasInfoAboutFailedTests();
@@ -105,14 +116,19 @@ export class ModalsService {
          : 'This page doesn\'t have any information about failed tests';
 
     const validateCompareBtn = () => {
-      const valid = this.$db.getSelectedBuildIds().length == 2;
-      compareBtn$.disabled = !valid;
-      compareBtn$.title = valid
+      const isValid = this.$db.getSelectedBuildIds().length === 2;
+      compareBtn$.disabled = !isValid;
+      compareBtn$.title = isValid
          ? 'Compare two selected builds'
          : 'Select two builds first';
     };
+    const validateClearBtn = () => {
+      const isValid = this.$db.getAllBuilds().length > 0;
+      clearBtn$.disabled = !isValid;
+    };
 
     validateCompareBtn();
+    validateClearBtn();
   } // end .openMainGrid()
 
   public openComparisonModal(result: ComparisonResult): void {

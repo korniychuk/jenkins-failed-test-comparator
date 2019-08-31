@@ -110,6 +110,15 @@ export class DbService implements OnInit {
     };
   }
 
+  public clearCurrentBuildJob(): void {
+    const bj = this.getCurrentBuildJob();
+    bj.selectedBuildIds = [];
+    bj.builds = {};
+    bj.buildsOrder = [];
+
+    this.save();
+  }
+
   private save() {
     // Prototype.js breaks JSON.stringify. We should use Prototype.js if it loaded.
     const dataAsStr = typeof Object.toJSON === 'function'
