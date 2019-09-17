@@ -32,7 +32,7 @@ export class JenkinsService {
       throw new Error(`Can't find <h1> or it hasn't .textContent`);
     }
 
-    const match = h1$.textContent.match(/Build (?<id>\d+):\s+(?<name>\w+)\s*\((?<date>[^()]+)\)/) as ESNextRegExpMatchArray | null;
+    const match = h1$.textContent.match(/Build (?<id>\d+):\s+(?<name>.+?)\s*\((?<date>[^()]+)\)/) as ESNextRegExpMatchArray | null;
     if (!match) {
       throw new Error(`Can not parse <h1>`);
     }
