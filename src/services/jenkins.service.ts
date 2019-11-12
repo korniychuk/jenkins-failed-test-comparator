@@ -22,7 +22,9 @@ export class JenkinsService {
   }
 
   public retrieveBuildJobName(): string | undefined {
-    const name = location.pathname.replace(/^((?:\/job\/[\w-]+)+).*?$/, '$1');
+    // TODO: last job name removed, because we need to have cross job comparing
+    // const name = location.pathname.replace(/^((?:\/job\/[\w-]+)+).*?$/, '$1');
+    const name = location.pathname.replace(/^((?:\/job\/[\w-]+)+)\/job\/[\w-]+.*?$/, '$1');
     return name.length > 5 ? name : undefined;
   }
 
