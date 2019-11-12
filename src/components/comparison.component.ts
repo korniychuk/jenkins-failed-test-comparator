@@ -21,7 +21,9 @@ interface TestVars {
 
 interface ComparisonVars {
   firstId: number;
+  firstBranch: string;
   secondId: number;
+  secondBranch: string;
 
   /** HTML contains <a> elements */
   firstFailed: string;
@@ -75,16 +77,16 @@ export class ComparisonComponent implements Component, OnBeforeInsert, OnBeforeR
     <div class="${this.prefix}">
       <div class="${this.prefix}-grid" data-select="grid"></div>
 
-      <h3 class="${this.prefix}-heading">All Failed Tests in #{{ firstId }} ({{ firstFailedCount }}):</h3>
+      <h3 class="${this.prefix}-heading">All Failed Tests in #{{ firstId }}[{{ firstBranch }}] ({{ firstFailedCount }}):</h3>
       <div class="${this.prefix}-failed-list">{{ firstFailed }}</div>
 
-      <h3 class="${this.prefix}-heading">All Failed Tests in #{{ secondId }} ({{ secondFailedCount }}):</h3>
+      <h3 class="${this.prefix}-heading">All Failed Tests in #{{ secondId }}[{{ secondBranch }}] ({{ secondFailedCount }}):</h3>
       <div class="${this.prefix}-failed-list">{{ secondFailed }}</div>
 
-      <h3 class="${this.prefix}-heading">Tests Failed in #{{ firstId }}, but passed in #{{ secondId }} ({{ onlyFirstFailedCount }}):</h3>
+      <h3 class="${this.prefix}-heading">Tests Failed in #{{ firstId }}[{{ firstBranch }}], but passed in #{{ secondId }} ({{ onlyFirstFailedCount }})[{{ secondBranch }}]:</h3>
       <div class="${this.prefix}-failed-list">{{ onlyFirstFailed }}</div>
 
-      <h3 class="${this.prefix}-heading">Tests Failed in #{{ secondId }}, but passed in #{{ firstId }} ({{ onlySecondFailedCount }}):</h3>
+      <h3 class="${this.prefix}-heading">Tests Failed in #{{ secondId }}[{{ secondBranch }}], but passed in #{{ firstId }}[{{ firstBranch }}] ({{ onlySecondFailedCount }}):</h3>
       <div class="${this.prefix}-failed-list">{{ onlySecondFailed }}</div>
 
       <h3 class="${this.prefix}-heading">Tests Failed in both builds ({{ bothFailedCount }}):</h3>
@@ -151,9 +153,12 @@ export class ComparisonComponent implements Component, OnBeforeInsert, OnBeforeR
     const onlySecondFailedCount = res.onlySecond.length;
     const bothFailedCount       = res.both.length;
 
+    // TODO: finish. There is a problem because of branch is in not indexed object
     const tplRef = this.mainRenderer({
       firstId: res.first.id,
+      firstBranch: '',
       secondId: res.second.id,
+      secondBranch: '',
 
       firstFailed,
       secondFailed,
